@@ -1,0 +1,234 @@
+body {
+  display: flex;
+  justify-content: space-around;
+  flex-direction: column;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-top: 5%;
+}
+
+#top-section {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  width: 100%;
+}
+
+#game-controls {
+  width: 100%;
+}
+
+#sidebar {
+  flex: 1 1 200px;
+  padding-left: 3%;
+  padding-right: 3%;
+  padding-bottom: 5%;
+}
+
+#main {
+  flex: 2 1 400px;
+  padding-left: 3%;
+  padding-bottom: 5%;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table,
+th,
+td {
+  border: 1px solid black;
+}
+
+th,
+td {
+  padding: 2%;
+  text-align: left;
+}
+td {
+}
+th[colspan="2"] {
+  text-align: center;
+}
+#theRules {
+  order: 3;
+  flex: 1;
+  min-width: 200px;
+  padding-right: 5%;
+  padding-left: 3%;
+}
+
+#game-board {
+  display: grid;
+  grid-template-columns: repeat(14, 1fr);
+  grid-template-rows: repeat(14, 1fr);
+  height: 420px;
+  width: 420px;
+  grid-gap: 1px;
+}
+.cell {
+  width: 30px;
+  height: 30px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+}
+.resource {
+  position: relative;
+  overflow: hidden;
+  background-image: url(https://i.imgur.com/uCKWB11.png);
+  background-size: 130%;
+  background-position: center;
+}
+
+.row {
+  display: contents;
+}
+.map-piece-red {
+  background-color: #ff5959;
+}
+
+.map-piece-blue {
+  background-color: #597eff;
+}
+
+.map-piece-green {
+  background-color: #48b948;
+}
+
+.map-piece-yellow {
+  background-color: #ffdb4c;
+}
+
+.map-piece-purple {
+  background-color: #9b59b6;
+}
+
+.map-piece-orange {
+  background-color: #ff954c;
+}
+
+.map-piece-cyan {
+  background-color: #59ffff;
+}
+
+.map-piece-magenta {
+  background-color: #e75ae7;
+}
+
+.map-piece-brown {
+  background-color: #8c5a3f;
+}
+
+.map-piece-lime {
+  background-color: #a6ff59;
+}
+
+.preview {
+  background-color: grey;
+  opacity: 0.5;
+}
+.stone {
+  background-color: rgba(0, 0, 0, 0.1);
+  width: 55%;
+  height: 55%;
+  border-radius: 50%;
+  position: relative;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-style: solid;
+  pointer-events: none;
+  border-width: 2px;
+}
+
+.stone-preview {
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0.45;
+}
+.stone-player1 {
+  background-color: white;
+}
+
+.stone-player2 {
+  background-color: black;
+  border-color: white;
+}
+
+.lastPlayed {
+  border-width: 3px;
+  border-style: dashed;
+}
+
+#player1-score {
+  font-weight: bold;
+  color: #d90000;
+}
+
+#player2-score {
+  font-weight: bold;
+  color: #d90000;
+}
+.is-part-of-city:before {
+  content: "\2722 ";
+  position: relative;
+  top: -11%;
+  left: 15%;
+  font-size: small;
+}
+
+.is-part-of-route:before {
+  content: "\21B9 ";
+  position: relative;
+  top: -15%;
+  left: 15%;
+  font-size: small;
+}
+
+.is-part-of-city.is-part-of-route:before {
+  content: "\2725";
+  position: relative;
+  top: -20%;
+  left: 8%;
+  font-size: unset;
+}
+
+.stone-player1 {
+  color: black;
+}
+.stone-player2 {
+  color: white;
+}
+@keyframes ripple {
+  0% {
+    box-shadow: 0px 0px 0px 1px rgba(135, 206, 235, 0.7);
+  }
+  50% {
+    box-shadow: 0px 0px 0px 20px rgba(135, 206, 235, 0.1);
+  }
+  100% {
+    box-shadow: 0px 0px 0px 40px rgba(135, 206, 235, 0);
+  }
+}
+
+.removed-peninsula {
+  position: relative;
+  overflow: hidden;
+}
+
+.removed-peninsula::before {
+  content: "";
+  position: absolute;
+  width: 1%;
+  height: 1%;
+  top: 49%;
+  left: 49%;
+  background: rgba(135, 206, 235, 0.4);
+  border-radius: 50%;
+  --animation-iteration-count: max(
+    0,
+    calc(10 - var(--time-since-affected) / 1000)
+  );
+  animation: ripple 1.25s ease-out var(--animation-iteration-count);
+}

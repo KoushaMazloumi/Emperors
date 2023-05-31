@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>My Game</title>
+    <!-- <script src="game.js"></script>-->
+        <script type="module" src="main.mjs"></script>
+    <link rel="stylesheet" href="./styles1.css">
+  </head>
+  <body>
+    <div id="top-section">
+      <div id="sidebar">
+        <div id="status-div">
+          <table>
+            <tr>
+              <th>Game Phase</th>
+              <td id="game-phase"></td>
+            </tr>
+            <tr>
+              <th>Turn Count</th>
+              <td id="turn-indicator"></td>
+            </tr>
+            <tr>
+              <th>Current Player</th>
+              <td id="current-player"></td>
+            </tr>
+            <tr>
+              <th colspan="2">White</th>
+            </tr>
+            <tr>
+              <th>Score</th>
+              <td id="player1-score"></td>
+            </tr>
+            <tr>
+              <th>Emperors</th>
+              <td id="player1-emperor"></td>
+            </tr>
+            <tr>
+              <th>Trade Routes</th>
+              <td id="player1-trade-routes"></td>
+            </tr>
+            <tr>
+              <th>Cities</th>
+              <td id="player1-cities"></td>
+            </tr>
+            <tr>
+              <th>Population</th>
+              <td id="player1-population"></td>
+            </tr>
+            <tr>
+              <th>Resources</th>
+              <td id="player1-resources"></td>
+            </tr>
+            <tr>
+              <th colspan="2">Black</th>
+            </tr>
+            <tr>
+              <th>Score</th>
+              <td id="player2-score"></td>
+            </tr>
+            <tr>
+              <th>Emperors</th>
+              <td id="player2-emperor"></td>
+            </tr>
+            <tr>
+              <th>Trade Routes</th>
+              <td id="player2-trade-routes"></td>
+            </tr>
+            <tr>
+              <th>Cities</th>
+              <td id="player2-cities"></td>
+            </tr>
+            <tr>
+              <th>Population</th>
+              <td id="player2-population"></td>
+            </tr>
+            <tr>
+              <th>Resources</th>
+              <td id="player2-resources"></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div id="main">
+        <div id="game-board"></div>
+      </div>
+    </div>
+    <div id="game-controls">
+      <ul>
+        <li>
+          <button id="undo-button">Undo</button>
+        </li>
+        <li>
+          <input type="checkbox" id="checkTradeRoutes" name="checkTradeRoutes" value="true" checked>
+          <label for="checkTradeRoutes">Include Trade Routes?</label>
+        </li>
+        <li>
+          <input type="checkbox" id="checkCities" name="checkCities" value="true" checked>
+          <label for="checkCities">Include Cities?</label>
+        </li>
+        <li>
+          <input type="checkbox" id="checkGlobalWarming" name="checkGlobalWarming" value="true" checked>
+          <label for="checkGlobalWarming">Include Global Warming?</label>
+        </li>
+      </ul>
+    </div>
+    </div>
+    <div id="theRules">
+      <h2>The Objective</h2>
+      <p>
+        <em>Emperors</em> is played on a 2D grid with map pieces and stones. There are two distinct phases of the game:
+      <ul>
+        <li>The <strong>map phase</strong> is the phase in which the players take turns building the map that the game will be played on.
+        <li>The <strong>stone phase</strong> is the phase in which the players take turns placing stones on the map that they built during the map phase. </li>
+      </ul> Your objective is to <strong>establish and empire</strong>, while building the <strong>strongest trade route</strong> on the map. You will also receive bonus points for <strong>establishing cities</strong> and controlling larger populations. </p>
+      <h2>The Map Phase</h2>
+      <p> Players place 10 map pieces, which are distinct with different colors, shapes, and sizes. The placement of the pieces will follow these rules:
+      <ul>
+        <li>Map pieces can be any continuous shape or length of 3-7 squares.</li>
+        <li>The first 4 map pieces which the game generates are always 5 squares in length.</li>
+        <li>Each map piece must be placed on an empty square on the board. Map pieces cannot overlap.</li>
+        <li>The first map piece of the game can be placed anywhere within the bounds of the board. </li>
+        <li>Subsequent map pieces must be placed with at least one of their squarse adjacent to an existing square of the map.</li>
+      </ul>
+      </p>
+      <h2>The Stone Phase</h2>
+      <p>During the stone phase, players place stones on the map pieces created in the previous phase. Stones are marked as white or black to represent each player. This phase ctoninues until a stone occupies every square on the map. The placement of the stones will follow these rules:
+      <ul>
+        <li>Stones can only be placed on empty squares, not already occupied ones.</li>
+        <li>The first stone can be placed anywhere on the map pieces.</li>
+        <li>Subsequent stones must be placed adjacent to at least one other stone, regardless of the owner.</li>
+        <li>Players will continue placing stones until every map piece square is occupied.</li>
+      </ul>
+      </p>
+      <h2>Scoring</h2>
+      <p>Players earn points based on the following criteria:</p>
+      <p>
+        <strong>Emperor Points:</strong>
+      </p>
+      <ul>
+        <li>The player with more stones on a map piece becomes the emperor of that piece.</li>
+        <li>Each emperor is worth 1 point.</li>
+        <li>The number of squares in the ruled map piece provides an additional 1 point per square population bonus.</li>
+      </ul>
+      <p>
+        <strong>Trade Route Points:</strong>
+      </p>
+      <ul>
+        <li>Trade routes are established by placing two stones on either side of a gap.</li>
+        <li>Players earn 1 point per trade route.</li>
+        <li>Gaps between trade ports (empty non-map sapces) count for 1 additional point each.</li>
+        <li>Trade routes are counted horizontally and vertically.</li>
+      </ul>
+      <p>
+        <strong>City Points:</strong>
+      </p>
+      <ul>
+        <li>Cities consist of 3 or more stones of the same player in a vertical or horizontal line.</li>
+        <li>Players earn 1 point by establishing a city</li>
+        <li>The number of stones in the line does not affect the score; each city is worth 1 point.</li>
+      </ul>
+      <p>The player with the highest score when the map is fully occupied wins the game!</p>
+    </div>
+    
+    </div>
+  </body>
+</html>
