@@ -109,8 +109,20 @@ export class BoardStateEditor {
     this.applyChanges();
   }
 
+  clearFlags(grid) {
+    let clearedGrid = JSON.parse(JSON.stringify(grid));
+    for (let i = 0; i < clearedGrid.length; i++) {
+      for (let j = 0; j < clearedGrid[i].length; j++) {
+        if (clearedGrid[i][j] !== null) {
+          clearedGrid[i][j].lastPlayed = false;
+        }
+      }
+    }
+    return clearedGrid;
+  }
+
   getGrid() {
-    return this.#board.getGrid();
+    return this.clearFlags(this.#board.getGrid());
   }
 }
 //Helper class for Board State that traverses the grid searches for specific patterns of stones, map pieces or natural resources
@@ -127,7 +139,7 @@ export class BoardStateSearcher {
     if (!this.strategy) {
       throw new Error("Strategy is not set");
     }
-    this.grid = this.gameBoard.getGrid();
+    this.grid = JSON.parse(JSON.stringify(this.gameBoard.getGrid()));
 
     // Perform the strategy
     console.log(this.grid);
@@ -199,7 +211,7 @@ export class MoveValidator {
     if (!this.strategy) {
       throw new Error("Strategy is not set");
     }
-    this.grid = this.gameBoard.getGrid();
+    this.grid = JSON.parse(JSON.stringify(this.gameBoard.getGrid()));
 
     // Perform the strategy
     console.log(this.grid);
@@ -386,7 +398,7 @@ export class AddStoneStrategy {
   // Method to perform the strategy
   performStrategy(editor, details) {
     // Store the current state of the grid
-    this.gridCOPY = editor.getGrid().map((row) => [...row]);
+    this.gridCOPY = JSON.parse(JSON.stringify(editor.getGrid()));
 
     // Set the player and the coordinates of the stone
     this.player = details.currentPlayer;
@@ -413,6 +425,7 @@ export class AddStoneStrategy {
       square.mapPiece.shapeRelativeStoneFlags[square.pieceSquareIndex] =
         this.player; // Set the owner of the stone in the map piece
       square.mapPiece.StoneCount++; // Increment the stone count of the map piece
+      square.lastPlayed = true; // Set the last played flag of the square
     }
   }
 }
@@ -430,8 +443,7 @@ export class AddMapPieceStrategy {
   // Method to perform the strategy
   performStrategy(editor, details) {
     // Store the current state of the grid
-    this.gridCOPY = editor.getGrid().map((row) => [...row]);
-
+    this.gridCOPY = JSON.parse(JSON.stringify(editor.getGrid()));
     // Set the piece and its placement coordinates
     this.piece = details.piece;
     this.x = details.x - Math.floor(PIECE_SHAPE_SIZE / 2);
@@ -473,6 +485,7 @@ export class AddMapPieceStrategy {
           // Add the square to the game board
           this.gridCOPY[squareY][squareX] = {
             type: "mapPiece",
+            lastPlayed: false,
             color: this.piece.color,
             mapPiece: this.piece, // Store a reference to the MapPiece
             pieceSquareIndex: squareIndex, // Set id to the index of the square within the map piece
@@ -509,7 +522,7 @@ export class AddNaturalResourceStrategy {
   // Method to perform the strategy
   performStrategy(editor, details) {
     // Store the current state of the grid
-    this.gridCOPY = editor.getGrid().map((row) => [...row]);
+    this.gridCOPY = JSON.parse(JSON.stringify(editor.getGrid()));
 
     // Calculate the size of the grid and the quadrants
     this.gridSize = this.gridCOPY.length;

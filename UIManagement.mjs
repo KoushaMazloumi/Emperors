@@ -106,6 +106,11 @@ export class BoardRenderer {
             const permanentStone = document.createElement("div");
             permanentStone.classList.add("stone-permanent");
             permanentStone.classList.add("stone");
+            if (cell.lastPlayed) {
+              permanentStone.classList.add("lastPlayed");
+            } else {
+              permanentStone.classList.remove("lastPlayed");
+            }
             if (cell.stoneOwner === PLAYER_1) {
               permanentStone.classList.add("stone-player1");
             } else if (cell.stoneOwner === PLAYER_2) {
