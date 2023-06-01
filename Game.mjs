@@ -28,7 +28,8 @@ import {
   BoardState,
   BoardStateSearcher,
   BoardStateEditor,
-  EmperorCounterStrategy,
+  EmperorCounter,
+  UpdateEmeperorStrategy,
   MoveValidator,
   ValidateMapPiecePlacementStrategy,
   ValidateStonePlacementStrategy,
@@ -63,6 +64,7 @@ export class Game {
     this.gameLogger = new Logger();
     this.mapPieces = [];
     this.currentMapPieceIndex = 0;
+
     this.moveValidator = new MoveValidator(this.gameBoard);
     this.addNaturalResourceStrategy = new AddNaturalResourceStrategy();
     this.boardRendererStrategy = new BoardRenderer();
@@ -72,7 +74,8 @@ export class Game {
     this.validateStonePlacementStrategy = new ValidateStonePlacementStrategy();
     this.addMapPieceStrategy = new AddMapPieceStrategy();
     this.addStoneStrategy = new AddStoneStrategy();
-    this.emperorCounter = new EmperorCounterStrategy();
+    this.emperorCounter = new EmperorCounter();
+    this.updateEmeperorStrategy = new UpdateEmeperorStrategy();
     this.turnManager = new TurnManager(this);
   }
 
@@ -110,8 +113,14 @@ export class Game {
           // Change the turn
           this.turnManager.changeTurn();
           // Search the board for emperors
+
           this.gameBoardSearcher.setStrategy(this.emperorCounter);
-          this.gameBoardSearcher.performStrategy();
+          //Update the emperor count for the entire board
+          details.setCurrentEmperorState(
+            this.gameBoardSearcher.performStrategy()
+          );
+          this.gameBoardEditor.setStrategy(this.updateEmeperorStrategy);
+          this.gameBoardEditor.performStrategy(details);
 
           // Render the board
           this.gameRenderer.setStrategy(this.boardRendererStrategy);

@@ -89,7 +89,7 @@ export class BoardStateEditor {
 
     // Update the board with the new grid
     this.#board.uploadGrid(newGrid);
-
+    console.log("updated board, newGrid: ", newGrid);
     // Print the updated board state
   }
 
@@ -110,22 +110,12 @@ export class BoardStateEditor {
     this.applyChanges();
   }
 
-  clearFlags(grid) {
-    let clearedGrid = JSON.parse(JSON.stringify(grid));
-    for (let i = 0; i < clearedGrid.length; i++) {
-      for (let j = 0; j < clearedGrid[i].length; j++) {
-        if (clearedGrid[i][j] !== null) {
-          clearedGrid[i][j].lastPlayed = false;
-        }
-      }
-    }
-    return clearedGrid;
-  }
-
   getGrid() {
-    return this.clearFlags(this.#board.getGrid());
+    let gridCopy = JSON.parse(JSON.stringify(this.#board.getGrid()));
+    return gridCopy;
   }
 }
+
 //Helper class for Board State that traverses the grid searches for specific patterns of stones, map pieces or natural resources
 export class BoardStateSearcher {
   constructor(gameBoard) {
@@ -143,13 +133,12 @@ export class BoardStateSearcher {
     this.grid = this.gameBoard.getGrid();
 
     // Perform the strategy
-    console.log(this.grid);
 
     return this.strategy.performStrategy(this, details);
   }
 }
 
-export class EmperorCounterStrategy {
+export class EmperorCounter {
   constructor() {
     this.grid = null;
   }
@@ -159,7 +148,9 @@ export class EmperorCounterStrategy {
     this.grid = boardStateSearcher.grid;
 
     // Call the countEmperors method and return its result
-    return this.countEmperors(this.grid);
+    let emperorCount = this.countEmperors(this.grid);
+
+    return emperorCount;
   }
 
   // Method to count the number of emperors on the board
@@ -194,7 +185,7 @@ export class EmperorCounterStrategy {
       emperors.push({ mapPieceID, emperor });
     }
 
-    console.log("Emperors of map pieces", emperors);
+    return emperors;
   }
 }
 
@@ -250,8 +241,6 @@ export class ValidateStonePlacementStrategy {
       const square = grid[y][x];
       // Check if the square exists
       if (square) {
-        console.log("square:", square);
-        console.log("pieceSquareIndex:", square.pieceSquareIndex);
         // Check if the square is a map piece and has no stones on it
         if (square && square.type === "mapPiece" && square.stoneCount === 0) {
           // Check if the stone is adjacent to another stone
@@ -292,7 +281,7 @@ export class ValidateMapPiecePlacementStrategy {
 
   performStrategy(moveValidator, details) {
     this.grid = moveValidator.grid;
-    console.log("moveValidator", this.grid);
+
     this.piece = details.piece;
     this.x = details.x;
     this.y = details.y;
@@ -414,9 +403,19 @@ export class AddStoneStrategy {
   giveUpdatedGrid() {
     return this.gridCOPY;
   }
+  clearFlags() {
+    for (let i = 0; i < this.gridCOPY.length; i++) {
+      for (let j = 0; j < this.gridCOPY[i].length; j++) {
+        if (this.gridCOPY[i][j] !== null) {
+          this.gridCOPY[i][j].lastPlayed = false;
+        }
+      }
+    }
+  }
 
   // Method to add the stone to the game board
   addStone() {
+    this.clearFlags();
     const square = this.gridCOPY[this.y][this.x]; // Get the square where the stone is being added
     if (square && square.type === "mapPiece") {
       // Check if the square is a map piece
@@ -431,6 +430,48 @@ export class AddStoneStrategy {
   }
 }
 
+export class UpdateEmeperorStrategy {
+  constructor() {
+    // Initialize properties
+    this.gridCOPY = [];
+    this.currentEmperorState = [];
+  }
+
+  // Method to perform the strategy
+  performStrategy(editor, details) {
+    // Store the current state of the grid
+    this.gridCOPY = editor.getGrid();
+    this.currentEmperorState = details.currentEmperorState;
+    this.updateEmperors();
+  }
+  updateEmperors() {
+    // Update the emperor states
+    for (let i = 0; i < GRID_SIZE; i++) {
+      for (let j = 0; j < GRID_SIZE; j++) {
+        const square = this.gridCOPY[i][j];
+
+        if (square && square.type === "mapPiece") {
+          // Check if the square is a map piece
+          // Find the corresponding object in currentEmperorState
+          const currentEmperor = this.currentEmperorState.find(
+            (emperor) => emperor.mapPieceID === square.mapPieceID
+          );
+          // Check if the emperor state of the square is different from the current emperor state
+          if (
+            currentEmperor &&
+            square.mapPiece.emperor !== currentEmperor.emperor
+          ) {
+            // Update the emperor state of the square
+            square.mapPiece.emperor = currentEmperor.emperor;
+          }
+        }
+      }
+    }
+  }
+  giveUpdatedGrid() {
+    return this.gridCOPY;
+  }
+}
 // Strategy for adding a map piece to the game board
 export class AddMapPieceStrategy {
   constructor() {

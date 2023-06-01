@@ -123,6 +123,7 @@ export class StrategyDetails {
     this.x = null;
     this.y = null;
     this.currentMapPieceIndex = null;
+    this.currentEmperorState = null;
     this.gamePhase = null;
     this.toggleFlag = null;
     this.cellElement = null;
@@ -137,7 +138,10 @@ export class StrategyDetails {
     this.piece = piece;
     return this;
   }
-
+  setCurrentEmperorState(currentEmperorState) {
+    this.currentEmperorState = currentEmperorState;
+    return this;
+  }
   setX(x) {
     this.x = x;
     return this;
