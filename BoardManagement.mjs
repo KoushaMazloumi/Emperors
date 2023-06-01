@@ -60,7 +60,8 @@ export class BoardState {
   }
 
   getGrid() {
-    return this.#grid;
+    let gridCopy = JSON.parse(JSON.stringify(this.#grid));
+    return gridCopy;
   }
 
   // Method to get the current state of the game board
@@ -139,7 +140,7 @@ export class BoardStateSearcher {
     if (!this.strategy) {
       throw new Error("Strategy is not set");
     }
-    this.grid = JSON.parse(JSON.stringify(this.gameBoard.getGrid()));
+    this.grid = this.gameBoard.getGrid();
 
     // Perform the strategy
     console.log(this.grid);
@@ -211,7 +212,7 @@ export class MoveValidator {
     if (!this.strategy) {
       throw new Error("Strategy is not set");
     }
-    this.grid = JSON.parse(JSON.stringify(this.gameBoard.getGrid()));
+    this.grid = this.gameBoard.getGrid();
 
     // Perform the strategy
     console.log(this.grid);
@@ -398,7 +399,7 @@ export class AddStoneStrategy {
   // Method to perform the strategy
   performStrategy(editor, details) {
     // Store the current state of the grid
-    this.gridCOPY = JSON.parse(JSON.stringify(editor.getGrid()));
+    this.gridCOPY = editor.getGrid();
 
     // Set the player and the coordinates of the stone
     this.player = details.currentPlayer;
@@ -443,7 +444,7 @@ export class AddMapPieceStrategy {
   // Method to perform the strategy
   performStrategy(editor, details) {
     // Store the current state of the grid
-    this.gridCOPY = JSON.parse(JSON.stringify(editor.getGrid()));
+    this.gridCOPY = editor.getGrid();
     // Set the piece and its placement coordinates
     this.piece = details.piece;
     this.x = details.x - Math.floor(PIECE_SHAPE_SIZE / 2);
@@ -522,7 +523,7 @@ export class AddNaturalResourceStrategy {
   // Method to perform the strategy
   performStrategy(editor, details) {
     // Store the current state of the grid
-    this.gridCOPY = JSON.parse(JSON.stringify(editor.getGrid()));
+    this.gridCOPY = editor.getGrid();
 
     // Calculate the size of the grid and the quadrants
     this.gridSize = this.gridCOPY.length;
