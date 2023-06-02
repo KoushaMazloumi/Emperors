@@ -137,7 +137,92 @@ export class BoardStateSearcher {
     return this.strategy.performStrategy(this, details);
   }
 }
+export class TradeRouteCounter {
+  constructor() {
+    this.grid = null;
+  }
 
+  // Method to perform the strategy
+  performStrategy(boardStateSearcher, details) {
+    this.grid = boardStateSearcher.grid;
+
+    // Call the countEmperors method and return its result
+    let tradeRouteCount = this.countTradeRoutes(this.grid);
+
+    return tradeRouteCount;
+  }
+
+  countTradeRoutes(grid) {
+    //create an object tradeRoutes that will store the trade routes and their lengths per player
+    let tradeRoutes = {
+      [PLAYER_1]: {
+        count: 0,
+        totalLength: 0,
+      },
+      [PLAYER_2]: {
+        count: 0,
+        totalLength: 0,
+      },
+    };
+    for (let i = 0; i < this.grid.length; i++) {
+      for (let j = 0; j < this.grid[i].length; j++) {
+        if (
+          this.grid[i][j] !== null &&
+          (this.grid[i][j].stoneOwner === PLAYER_1 ||
+            this.grid[i][j].stoneOwner === PLAYER_2)
+        ) {
+          let player = this.grid[i][j].stoneOwner;
+          let routeLength = 0; // start with 0
+          // Check down direction
+          for (let k = i + 1; k < this.grid.length; k++) {
+            if (this.grid[k][j] === null) {
+              routeLength++;
+            } else if (
+              this.grid[k][j].stoneOwner === player &&
+              routeLength > 0
+            ) {
+              // check if routeLength > 0
+              tradeRoutes[player].count++;
+              tradeRoutes[player].totalLength += routeLength;
+              for (let l = i; l <= k; l++) {
+                if (this.grid[l][j]) {
+                  this.grid[l][j].isPartOfTradeRoute = true;
+                }
+              }
+              break;
+            } else {
+              break;
+            }
+          }
+          // Reset routeLength for horizontal check
+          routeLength = 0; // reset to 0
+          // Check right direction
+          for (let k = j + 1; k < this.grid[i].length; k++) {
+            if (this.grid[i][k] === null) {
+              routeLength++;
+            } else if (
+              this.grid[i][k].stoneOwner === player &&
+              routeLength > 0
+            ) {
+              // check if routeLength > 0
+              tradeRoutes[player].count++;
+              tradeRoutes[player].totalLength += routeLength;
+              for (let l = j; l <= k; l++) {
+                if (this.grid[i][l]) {
+                  this.grid[i][l].isPartOfTradeRoute = true;
+                }
+              }
+              break;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+    }
+    return tradeRoutes;
+  }
+}
 export class EmperorCounter {
   constructor() {
     this.grid = null;
@@ -408,6 +493,7 @@ export class AddStoneStrategy {
       for (let j = 0; j < this.gridCOPY[i].length; j++) {
         if (this.gridCOPY[i][j] !== null) {
           this.gridCOPY[i][j].lastPlayed = false;
+          this.gridCOPY[i][j].isPartOfTradeRoute = false; // Reset the trade route flag of the square
         }
       }
     }

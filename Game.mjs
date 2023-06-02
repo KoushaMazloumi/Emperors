@@ -36,6 +36,7 @@ import {
   AddStoneStrategy,
   AddMapPieceStrategy,
   AddNaturalResourceStrategy,
+  TradeRouteCounter,
 } from "./BoardManagement.mjs";
 import { MapPieceGenerator, MapPiece } from "./MapPieces.mjs";
 import {
@@ -77,6 +78,7 @@ export class Game {
     this.emperorCounter = new EmperorCounter();
     this.updateEmeperorStrategy = new UpdateEmeperorStrategy();
     this.turnManager = new TurnManager(this);
+    this.tradeRouteCounter = new TradeRouteCounter();
   }
 
   // Method to execute a strategy based on the given action and details
@@ -122,6 +124,10 @@ export class Game {
           this.gameBoardEditor.setStrategy(this.updateEmeperorStrategy);
           this.gameBoardEditor.performStrategy(details);
 
+          this.gameBoardSearcher.setStrategy(this.tradeRouteCounter);
+          details.setCurrentTradeRouteState(
+            this.gameBoardSearcher.performStrategy()
+          );
           // Render the board
           this.gameRenderer.setStrategy(this.boardRendererStrategy);
           this.gameRenderer.performStrategy();

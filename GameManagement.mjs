@@ -124,11 +124,16 @@ export class StrategyDetails {
     this.y = null;
     this.currentMapPieceIndex = null;
     this.currentEmperorState = null;
+    this.currentTradeRouteState = null;
     this.gamePhase = null;
     this.toggleFlag = null;
     this.cellElement = null;
     this.currentTurn = null;
     this.currentPlayer = null;
+  }
+  setCurrentTradeRouteState(currentTradeRouteState) {
+    this.currentTradeRouteState = currentTradeRouteState;
+    return this;
   }
   setCurrentPlayer(currentPlayer) {
     this.currentPlayer = currentPlayer;
