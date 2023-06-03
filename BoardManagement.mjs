@@ -387,7 +387,10 @@ export class EmperorCounter {
       }
       emperors.push({ mapPieceID, emperor });
     }
-
+    console.log(
+      "🚀 ~ file: BoardManagement.mjs:393 ~ EmperorCounter ~ countEmperors ~ emperors:",
+      emperors
+    );
     return emperors;
   }
 }

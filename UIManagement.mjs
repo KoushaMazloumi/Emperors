@@ -91,6 +91,28 @@ export class StatusRenderer {
     } else if (details.currentPlayer === PLAYER_2) {
       currentPlayerIndicator.textContent = "White";
     }
+
+    // Update player emperor counts in the UI
+    const emperors = details.currentEmperorState;
+    let player1EmperorCount = 0;
+    let player2EmperorCount = 0;
+    for (const key in emperors) {
+      if (emperors.hasOwnProperty(key)) {
+        if (emperors[key].emperor === PLAYER_1) {
+          player1EmperorCount++;
+        } else if (emperors[key].emperor === PLAYER_2) {
+          player2EmperorCount++;
+        }
+      }
+    }
+    const player1EmperorCountElement =
+      document.getElementById("player1-emperor");
+
+    const player2EmperorCountElement =
+      document.getElementById("player2-emperor");
+
+    player2EmperorCountElement.textContent = `${player2EmperorCount}`;
+    player1EmperorCountElement.textContent = `${player1EmperorCount}`;
   }
 }
 
