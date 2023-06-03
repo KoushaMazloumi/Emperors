@@ -10,6 +10,8 @@ import {
   ADJACENT_OFFSETS,
   PLAYER_1,
   PLAYER_2,
+  MAP_PHASE_TURNS_THRESHOLD,
+  STONE_PHASE,
 } from "./Constants.mjs";
 
 import {
@@ -54,6 +56,14 @@ export class TurnManager {
       this.game.mapPieces.length - 1
     );
     return this;
+  }
+  checkPhase() {
+    // If the current turn is the map phase threshold, change the game phase to stone phase
+    if (this.currentTurn === MAP_PHASE_TURNS_THRESHOLD) {
+      return STONE_PHASE;
+    } else {
+      return this.game.gamePhase;
+    }
   }
 }
 //A class to encapsulate our history states

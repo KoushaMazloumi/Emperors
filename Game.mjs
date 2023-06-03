@@ -102,12 +102,10 @@ export class Game {
           this.gameBoardEditor.performStrategy(details);
           // Change the turn and render the board
           this.turnManager.changeTurn();
-          this.gameRenderer.setStrategy(this.boardRendererStrategy);
-          this.gameRenderer.performStrategy();
+          //Render various parts of the game
+          this.renderRoutine(details);
+          this.gamePhase = this.turnManager.checkPhase();
           // If the current turn is the map phase threshold, change the game phase to stone phase
-          if (this.turnManager.currentTurn === MAP_PHASE_TURNS_THRESHOLD) {
-            this.gamePhase = STONE_PHASE;
-          }
         }
         break;
 
@@ -120,34 +118,15 @@ export class Game {
           this.gameBoardEditor.setStrategy(this.addStoneStrategy);
           console.log("details", details);
           this.gameBoardEditor.performStrategy(details);
+
           // Change the turn
           this.turnManager.changeTurn();
-          // Search the board for emperors
 
-          this.gameBoardSearcher.setStrategy(this.emperorCounter);
-          //Update the emperor count for the entire board
-          details.setCurrentEmperorState(
-            this.gameBoardSearcher.performStrategy()
-          );
-          this.gameBoardEditor.setStrategy(this.updateEmeperorStrategy);
-          this.gameBoardEditor.performStrategy(details);
+          //Update counts for various flags
+          this.flagRoutine(details);
 
-          this.gameBoardSearcher.setStrategy(this.tradeRouteCounter);
-          details.setCurrentTradeRouteState(
-            this.gameBoardSearcher.performStrategy()
-          );
-          this.gameBoardEditor.setStrategy(this.updateTradeRouteStrategy);
-          this.gameBoardEditor.performStrategy(details);
-
-          this.gameBoardSearcher.setStrategy(this.cityFinder);
-          details.setCurrentCityState(this.gameBoardSearcher.performStrategy());
-
-          this.gameBoardEditor.setStrategy(this.updateCityStrategy);
-          this.gameBoardEditor.performStrategy(details);
-
-          // Render the board
-          this.gameRenderer.setStrategy(this.boardRendererStrategy);
-          this.gameRenderer.performStrategy();
+          //Render various parts of the game
+          this.renderRoutine(details);
         }
         break;
 
@@ -173,6 +152,29 @@ export class Game {
         // Throw an error if the action is unknown
         throw new Error(`Unknown action: ${action}`);
     }
+  }
+  // consolidates the flag routines (emperor, city, trade route, etc.)
+  flagRoutine(details) {
+    this.gameBoardSearcher.setStrategy(this.emperorCounter);
+    //Update the emperor count for the entire board
+    details.setCurrentEmperorState(this.gameBoardSearcher.performStrategy());
+    this.gameBoardEditor.setStrategy(this.updateEmeperorStrategy);
+    this.gameBoardEditor.performStrategy(details);
+
+    this.gameBoardSearcher.setStrategy(this.tradeRouteCounter);
+    details.setCurrentTradeRouteState(this.gameBoardSearcher.performStrategy());
+    this.gameBoardEditor.setStrategy(this.updateTradeRouteStrategy);
+    this.gameBoardEditor.performStrategy(details);
+
+    this.gameBoardSearcher.setStrategy(this.cityFinder);
+    details.setCurrentCityState(this.gameBoardSearcher.performStrategy());
+
+    this.gameBoardEditor.setStrategy(this.updateCityStrategy);
+    this.gameBoardEditor.performStrategy(details);
+  }
+  renderRoutine(details) {
+    this.gameRenderer.setStrategy(this.boardRendererStrategy);
+    this.gameRenderer.performStrategy();
   }
 
   initialize() {
