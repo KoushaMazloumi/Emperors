@@ -37,6 +37,8 @@ import {
   AddMapPieceStrategy,
   AddNaturalResourceStrategy,
   TradeRouteCounter,
+  PeninsulaFinder,
+  CityFinder,
 } from "./BoardManagement.mjs";
 import { MapPieceGenerator, MapPiece } from "./MapPieces.mjs";
 import {
@@ -79,6 +81,8 @@ export class Game {
     this.updateEmeperorStrategy = new UpdateEmeperorStrategy();
     this.turnManager = new TurnManager(this);
     this.tradeRouteCounter = new TradeRouteCounter();
+    this.peninsulaFinder = new PeninsulaFinder();
+    this.cityFinder = new CityFinder();
   }
 
   // Method to execute a strategy based on the given action and details
@@ -127,6 +131,12 @@ export class Game {
           this.gameBoardSearcher.setStrategy(this.tradeRouteCounter);
           details.setCurrentTradeRouteState(
             this.gameBoardSearcher.performStrategy()
+          );
+          this.gameBoardSearcher.setStrategy(this.cityFinder);
+          details.setCurrentCityState(this.gameBoardSearcher.performStrategy());
+          console.log(
+            "🚀 ~ file: Game.mjs:137 ~ Game ~ executeStrategy ~  details.setCurrentCityState:",
+            details
           );
           // Render the board
           this.gameRenderer.setStrategy(this.boardRendererStrategy);

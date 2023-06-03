@@ -130,9 +130,14 @@ export class StrategyDetails {
     this.cellElement = null;
     this.currentTurn = null;
     this.currentPlayer = null;
+    this.currentCityState = null;
   }
   setCurrentTradeRouteState(currentTradeRouteState) {
     this.currentTradeRouteState = currentTradeRouteState;
+    return this;
+  }
+  setCurrentCityState(currentCityState) {
+    this.currentCityState = currentCityState;
     return this;
   }
   setCurrentPlayer(currentPlayer) {

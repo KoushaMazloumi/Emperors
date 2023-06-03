@@ -12,6 +12,7 @@ import {
   FIRST_STONE_TURNS_THRESHOLD,
   PLAYER_1,
   PLAYER_2,
+  CITY_LENGTH_THRESHOLD,
 } from "./Constants.mjs";
 
 import {
@@ -137,6 +138,110 @@ export class BoardStateSearcher {
     return this.strategy.performStrategy(this, details);
   }
 }
+export class PeninsulaFinder {
+  constructor() {
+    this.grid = null;
+  }
+
+  performStrategy(boardStateSearcher, details) {
+    this.grid = boardStateSearcher.grid;
+
+    // Call the countEmperors method and return its result
+    let peninsulas = this.findPeninsulas(this.grid);
+
+    return peninsulas;
+  }
+
+  findPeninsulas(grid) {
+    let peninsulas = {};
+  }
+}
+export class CityFinder {
+  constructor() {
+    this.grid = null;
+  }
+
+  performStrategy(boardStateSearcher, details) {
+    this.grid = boardStateSearcher.grid;
+
+    // Call the find cities method and return its result
+    let cities = this.findCities(this.grid);
+
+    return cities;
+  }
+
+  findCities(grid) {
+    const cities = {
+      [PLAYER_1]: {
+        count: 0,
+        coordinates: [],
+      },
+      [PLAYER_2]: {
+        count: 0,
+        coordinates: [],
+      },
+    };
+    const visitedHorizontal = this.grid.map((row) => row.map(() => false));
+    const visitedVertical = this.grid.map((row) => row.map(() => false));
+    for (let i = 0; i < this.grid.length; i++) {
+      for (let j = 0; j < this.grid[i].length; j++) {
+        if (
+          this.grid[i][j] !== null &&
+          (this.grid[i][j].stoneOwner === PLAYER_1 ||
+            this.grid[i][j].stoneOwner === PLAYER_2)
+        ) {
+          let player = this.grid[i][j].stoneOwner;
+          let cityLength = 1; // Start with 1 to include the current cell
+          // Check down direction
+          if (!visitedVertical[i][j]) {
+            visitedVertical[i][j] = true; // Mark the current cell as visited
+            for (let k = i + 1; k < this.grid.length; k++) {
+              if (
+                this.grid[k][j] !== null &&
+                this.grid[k][j].stoneOwner === player
+              ) {
+                cityLength++;
+                visitedVertical[k][j] = true;
+              } else {
+                break;
+              }
+            }
+            if (cityLength >= CITY_LENGTH_THRESHOLD) {
+              cities[player].count++;
+              for (let k = i; k < i + cityLength; k++) {
+                cities[player].coordinates.push([i, k]);
+              }
+            }
+          }
+          // Reset cityLength for horizontal check
+          cityLength = 1; // Reset to 1 to include the current cell
+          // Check right direction
+          if (!visitedHorizontal[i][j]) {
+            visitedHorizontal[i][j] = true; // Mark the current cell as visited
+            for (let k = j + 1; k < this.grid[i].length; k++) {
+              if (
+                this.grid[i][k] !== null &&
+                this.grid[i][k].stoneOwner === player
+              ) {
+                cityLength++;
+                visitedHorizontal[i][k] = true;
+              } else {
+                break;
+              }
+            }
+            if (cityLength >= CITY_LENGTH_THRESHOLD) {
+              cities[player].count++;
+              for (let k = j; k < j + cityLength; k++) {
+                cities[player].coordinates.push([i, k]);
+              }
+            }
+          }
+        }
+      }
+    }
+    return cities;
+  }
+}
 export class TradeRouteCounter {
   constructor() {
     this.grid = null;
@@ -220,6 +325,10 @@ export class TradeRouteCounter {
         }
       }
     }
+    console.log(
+      "🚀 ~ file: BoardManagement.mjs:225 ~ TradeRouteCounter ~ countTradeRoutes ~ tradeRoutes:",
+      tradeRoutes
+    );
     return tradeRoutes;
   }
 }
@@ -494,6 +603,7 @@ export class AddStoneStrategy {
         if (this.gridCOPY[i][j] !== null) {
           this.gridCOPY[i][j].lastPlayed = false;
           this.gridCOPY[i][j].isPartOfTradeRoute = false; // Reset the trade route flag of the square
+          this.gridCOPY[i][j].isPartOfCity = false;
         }
       }
     }
