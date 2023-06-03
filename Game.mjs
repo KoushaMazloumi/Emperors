@@ -39,6 +39,7 @@ import {
   TradeRouteCounter,
   PeninsulaFinder,
   CityFinder,
+  UpdateTradeRouteStrategy,
 } from "./BoardManagement.mjs";
 import { MapPieceGenerator, MapPiece } from "./MapPieces.mjs";
 import {
@@ -79,6 +80,7 @@ export class Game {
     this.addStoneStrategy = new AddStoneStrategy();
     this.emperorCounter = new EmperorCounter();
     this.updateEmeperorStrategy = new UpdateEmeperorStrategy();
+    this.updateTradeRouteStrategy = new UpdateTradeRouteStrategy();
     this.turnManager = new TurnManager(this);
     this.tradeRouteCounter = new TradeRouteCounter();
     this.peninsulaFinder = new PeninsulaFinder();
@@ -132,12 +134,12 @@ export class Game {
           details.setCurrentTradeRouteState(
             this.gameBoardSearcher.performStrategy()
           );
+          this.gameBoardEditor.setStrategy(this.updateTradeRouteStrategy);
+          this.gameBoardEditor.performStrategy(details);
+
           this.gameBoardSearcher.setStrategy(this.cityFinder);
           details.setCurrentCityState(this.gameBoardSearcher.performStrategy());
-          console.log(
-            "🚀 ~ file: Game.mjs:137 ~ Game ~ executeStrategy ~  details.setCurrentCityState:",
-            details
-          );
+
           // Render the board
           this.gameRenderer.setStrategy(this.boardRendererStrategy);
           this.gameRenderer.performStrategy();

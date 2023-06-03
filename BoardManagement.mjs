@@ -263,10 +263,12 @@ export class TradeRouteCounter {
       [PLAYER_1]: {
         count: 0,
         totalLength: 0,
+        coordinates: [],
       },
       [PLAYER_2]: {
         count: 0,
         totalLength: 0,
+        coordinates: [],
       },
     };
     for (let i = 0; i < this.grid.length; i++) {
@@ -292,6 +294,7 @@ export class TradeRouteCounter {
               for (let l = i; l <= k; l++) {
                 if (this.grid[l][j]) {
                   this.grid[l][j].isPartOfTradeRoute = true;
+                  tradeRoutes[player].coordinates.push([l, j]);
                 }
               }
               break;
@@ -315,6 +318,7 @@ export class TradeRouteCounter {
               for (let l = j; l <= k; l++) {
                 if (this.grid[i][l]) {
                   this.grid[i][l].isPartOfTradeRoute = true;
+                  tradeRoutes[player].coordinates.push([i, l]);
                 }
               }
               break;
@@ -668,6 +672,54 @@ export class UpdateEmeperorStrategy {
     return this.gridCOPY;
   }
 }
+export class UpdateTradeRouteStrategy {
+  constructor() {
+    // Initialize properties
+    this.gridCOPY = [];
+    this.currentTradeRouteState = [];
+  }
+
+  // Method to perform the strategy
+  performStrategy(editor, details) {
+    // Store the current state of the grid
+    this.gridCOPY = editor.getGrid();
+    this.currentTradeRouteState = details.currentTradeRouteState;
+    this.tradeRouteCoordinates = [];
+
+    for (
+      let i = 0;
+      i < this.currentTradeRouteState[PLAYER_1].coordinates.length;
+      i++
+    ) {
+      this.tradeRouteCoordinates.push(
+        this.currentTradeRouteState[PLAYER_1].coordinates[i]
+      );
+    }
+    for (
+      let i = 0;
+      i < this.currentTradeRouteState[PLAYER_2].coordinates.length;
+      i++
+    ) {
+      this.tradeRouteCoordinates.push(
+        this.currentTradeRouteState[PLAYER_2].coordinates[i]
+      );
+    }
+
+    this.UpdateTradeRoutes();
+  }
+  UpdateTradeRoutes() {
+    for (let i = 0; i < this.tradeRouteCoordinates.length; i++) {
+      const tradeRouteCoordinatePair = this.tradeRouteCoordinates[i];
+      const square =
+        this.gridCOPY[tradeRouteCoordinatePair[0]][tradeRouteCoordinatePair[1]];
+
+      square.isPartOfTradeRoute = true;
+    }
+  }
+  giveUpdatedGrid() {
+    return this.gridCOPY;
+  }
+}
 // Strategy for adding a map piece to the game board
 export class AddMapPieceStrategy {
   constructor() {
@@ -724,6 +776,8 @@ export class AddMapPieceStrategy {
           this.gridCOPY[squareY][squareX] = {
             type: "mapPiece",
             lastPlayed: false,
+            isPartOfTradeRoute: false,
+            isPartOfCity: false,
             color: this.piece.color,
             mapPiece: this.piece, // Store a reference to the MapPiece
             pieceSquareIndex: squareIndex, // Set id to the index of the square within the map piece

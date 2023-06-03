@@ -108,8 +108,12 @@ export class BoardRenderer {
             permanentStone.classList.add("stone");
             if (cell.lastPlayed) {
               permanentStone.classList.add("lastPlayed");
-            } else {
-              permanentStone.classList.remove("lastPlayed");
+            }
+            if (cell.isPartOfTradeRoute) {
+              permanentStone.classList.add("is-part-of-route");
+            }
+            if (cell.isPartOfCity) {
+              permanentStone.classList.add("is-part-of-city");
             }
             if (cell.stoneOwner === PLAYER_1) {
               permanentStone.classList.add("stone-player1");
