@@ -36,6 +36,7 @@ import {
   EventListener,
 } from "./UIManagement.mjs";
 
+// ********************Board state classes********************
 // Our actual board state that needs to remain our single source of truth
 export class BoardState {
   #grid = [];
@@ -70,7 +71,6 @@ export class BoardState {
     // Add code here to return the current state of the game board
   }
 }
-
 export class BoardStateEditor {
   #board;
 
@@ -116,7 +116,6 @@ export class BoardStateEditor {
     return gridCopy;
   }
 }
-
 //Helper class for Board State that traverses the grid searches for specific patterns of stones, map pieces or natural resources
 export class BoardStateSearcher {
   constructor(gameBoard) {
@@ -138,6 +137,8 @@ export class BoardStateSearcher {
     return this.strategy.performStrategy(this, details);
   }
 }
+// ********************Board Search Strategies********************
+
 export class PeninsulaFinder {
   constructor() {
     this.grid = null;
@@ -391,6 +392,7 @@ export class EmperorCounter {
   }
 }
 
+// ********************Move Validation Classes********************
 //Validates moves as allowed or not
 export class MoveValidator {
   constructor(gameBoard) {
@@ -576,64 +578,8 @@ export class ValidateMapPiecePlacementStrategy {
     return true;
   }
 }
-// Strategy for adding a stone to the game board
-export class AddStoneStrategy {
-  constructor() {
-    // Initialize properties
-    this.gridCOPY = []; // A copy of the current game board
-    this.shape = null;
-    this.x = null; // The x-coordinate of the stone
-    this.y = null; // The y-coordinate of the stone
-    this.player = null; // The player who is adding the stone
-  }
 
-  // Method to perform the strategy
-  performStrategy(editor, details) {
-    // Store the current state of the grid
-    this.gridCOPY = editor.getGrid();
-
-    // Set the player and the coordinates of the stone
-    this.player = details.currentPlayer;
-    this.x = details.x;
-    this.y = details.y;
-
-    // Add the stone to the game board
-    this.addStone();
-  }
-
-  // Method to return the updated game board
-  giveUpdatedGrid() {
-    return this.gridCOPY;
-  }
-  clearFlags() {
-    for (let i = 0; i < this.gridCOPY.length; i++) {
-      for (let j = 0; j < this.gridCOPY[i].length; j++) {
-        if (this.gridCOPY[i][j] !== null) {
-          this.gridCOPY[i][j].lastPlayed = false;
-          this.gridCOPY[i][j].isPartOfTradeRoute = false; // Reset the trade route flag of the square
-          this.gridCOPY[i][j].isPartOfCity = false;
-        }
-      }
-    }
-  }
-
-  // Method to add the stone to the game board
-  addStone() {
-    this.clearFlags();
-    const square = this.gridCOPY[this.y][this.x]; // Get the square where the stone is being added
-    if (square && square.type === "mapPiece") {
-      // Check if the square is a map piece
-      // Inject the stone into the map piece and board
-      square.stoneCount++; // Increment the stone count of the square
-      square.stoneOwner = this.player; // Set the owner of the stone
-      square.mapPiece.shapeRelativeStoneFlags[square.pieceSquareIndex] =
-        this.player; // Set the owner of the stone in the map piece
-      square.mapPiece.StoneCount++; // Increment the stone count of the map piece
-      square.lastPlayed = true; // Set the last played flag of the square
-    }
-  }
-}
-
+// ********************Board Meta Update Strategies********************
 export class UpdateEmeperorStrategy {
   constructor() {
     // Initialize properties
@@ -768,7 +714,64 @@ export class UpdateCityStrategy {
     return this.gridCOPY;
   }
 }
-// Strategy for adding a map piece to the game board
+
+// ********************Board Injection Update Strategies********************
+export class AddStoneStrategy {
+  constructor() {
+    // Initialize properties
+    this.gridCOPY = []; // A copy of the current game board
+    this.shape = null;
+    this.x = null; // The x-coordinate of the stone
+    this.y = null; // The y-coordinate of the stone
+    this.player = null; // The player who is adding the stone
+  }
+
+  // Method to perform the strategy
+  performStrategy(editor, details) {
+    // Store the current state of the grid
+    this.gridCOPY = editor.getGrid();
+
+    // Set the player and the coordinates of the stone
+    this.player = details.currentPlayer;
+    this.x = details.x;
+    this.y = details.y;
+
+    // Add the stone to the game board
+    this.addStone();
+  }
+
+  // Method to return the updated game board
+  giveUpdatedGrid() {
+    return this.gridCOPY;
+  }
+  clearFlags() {
+    for (let i = 0; i < this.gridCOPY.length; i++) {
+      for (let j = 0; j < this.gridCOPY[i].length; j++) {
+        if (this.gridCOPY[i][j] !== null) {
+          this.gridCOPY[i][j].lastPlayed = false;
+          this.gridCOPY[i][j].isPartOfTradeRoute = false; // Reset the trade route flag of the square
+          this.gridCOPY[i][j].isPartOfCity = false;
+        }
+      }
+    }
+  }
+
+  // Method to add the stone to the game board
+  addStone() {
+    this.clearFlags();
+    const square = this.gridCOPY[this.y][this.x]; // Get the square where the stone is being added
+    if (square && square.type === "mapPiece") {
+      // Check if the square is a map piece
+      // Inject the stone into the map piece and board
+      square.stoneCount++; // Increment the stone count of the square
+      square.stoneOwner = this.player; // Set the owner of the stone
+      square.mapPiece.shapeRelativeStoneFlags[square.pieceSquareIndex] =
+        this.player; // Set the owner of the stone in the map piece
+      square.mapPiece.StoneCount++; // Increment the stone count of the map piece
+      square.lastPlayed = true; // Set the last played flag of the square
+    }
+  }
+}
 export class AddMapPieceStrategy {
   constructor() {
     // Initialize properties
@@ -848,7 +851,6 @@ export class AddMapPieceStrategy {
     }
   }
 }
-
 export class AddNaturalResourceStrategy {
   constructor() {
     // Initialize properties
