@@ -91,6 +91,22 @@ export class StatusRenderer {
     } else if (details.currentPlayer === PLAYER_2) {
       currentPlayerIndicator.textContent = "White";
     }
+    // Update player city counts in the UI
+    let player1CityCount = 0;
+    let player2CityCount = 0;
+    const cities = details.currentCityState;
+    if (cities !== null) {
+      player1CityCount = cities[PLAYER_1].count;
+
+      player2CityCount = cities[PLAYER_2].count;
+    }
+
+    const player1CitiesElement = document.getElementById("player1-cities");
+
+    const player2CitiesElement = document.getElementById("player2-cities");
+
+    player1CitiesElement.textContent = `${player1CityCount}`;
+    player2CitiesElement.textContent = `${player2CityCount}`;
 
     // Update player emperor counts in the UI
     const emperors = details.currentEmperorState;
@@ -105,6 +121,7 @@ export class StatusRenderer {
         }
       }
     }
+
     const player1EmperorCountElement =
       document.getElementById("player1-emperor");
 
