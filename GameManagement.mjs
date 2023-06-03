@@ -44,8 +44,10 @@ export class TurnManager {
   }
 
   // Method to change turn
-  changeTurn() {
+  changeTurn(details) {
     this.currentTurn++;
+    this.game.currentTurn = this.currentTurn;
+    details.setTurn(this.currentTurn);
     // Switch to the other player
     this.game.currentPlayer =
       this.game.currentPlayer === PLAYER_1 ? PLAYER_2 : PLAYER_1;
@@ -55,14 +57,12 @@ export class TurnManager {
       this.game.currentMapPieceIndex + 1,
       this.game.mapPieces.length - 1
     );
-    return this;
   }
-  checkPhase() {
+  checkPhase(details) {
     // If the current turn is the map phase threshold, change the game phase to stone phase
     if (this.currentTurn === MAP_PHASE_TURNS_THRESHOLD) {
-      return STONE_PHASE;
-    } else {
-      return this.game.gamePhase;
+      details.setGamePhase(STONE_PHASE);
+      this.game.gamePhase = STONE_PHASE;
     }
   }
 }

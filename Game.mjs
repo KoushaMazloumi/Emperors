@@ -61,6 +61,7 @@ export class Game {
     this.gameBoardSearcher = new BoardStateSearcher(this.gameBoard);
     this.eventListener = new EventListener(this, this.gameBoard); // Pass the board instance to the EventListener
     this.gameRenderer = new RenderManager(this.gameBoard);
+
     this.currentPlayer = PLAYER_1;
     this.mapPieceGenerator = new MapPieceGenerator(
       PIECE_SHAPE_SIZE,
@@ -87,6 +88,7 @@ export class Game {
     this.peninsulaFinder = new PeninsulaFinder();
     this.cityFinder = new CityFinder();
     this.updateCityStrategy = new UpdateCityStrategy();
+    this.statusRenderStrategy = new StatusRenderer();
   }
 
   // Method to execute a strategy based on the given action and details
@@ -101,11 +103,12 @@ export class Game {
           console.log("details", details);
           this.gameBoardEditor.performStrategy(details);
           // Change the turn and render the board
-          this.turnManager.changeTurn();
+          this.turnManager.changeTurn(details);
+
+          // If the current turn is the map phase threshold, change the game phase to stone phase
+          this.turnManager.checkPhase(details);
           //Render various parts of the game
           this.renderRoutine(details);
-          this.gamePhase = this.turnManager.checkPhase();
-          // If the current turn is the map phase threshold, change the game phase to stone phase
         }
         break;
 
@@ -120,7 +123,7 @@ export class Game {
           this.gameBoardEditor.performStrategy(details);
 
           // Change the turn
-          this.turnManager.changeTurn();
+          this.turnManager.changeTurn(details);
 
           //Update counts for various flags
           this.flagRoutine(details);
@@ -175,6 +178,9 @@ export class Game {
   renderRoutine(details) {
     this.gameRenderer.setStrategy(this.boardRendererStrategy);
     this.gameRenderer.performStrategy();
+
+    this.gameRenderer.setStrategy(this.statusRenderStrategy);
+    this.gameRenderer.performStrategy(details);
   }
 
   initialize() {

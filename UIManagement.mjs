@@ -64,7 +64,35 @@ export class RenderManager {
 }
 
 //A strategy for the RenderManager class and renders the Status
-export class StatusRenderer {}
+export class StatusRenderer {
+  constructor() {
+    this.boardReference = [];
+    this.gridContainer = 0;
+  }
+  // Method to perform the strategy
+  performStrategy(renderer, details) {
+    this.boardReference = renderer.getBoard();
+    this.renderStatus(this.boardReference, details);
+  }
+
+  renderStatus(board, details) {
+    // Update turn indicator
+    const turnIndicator = document.getElementById("turn-indicator");
+    turnIndicator.textContent = `${details.currentTurn + 1}`;
+
+    // Update phase indicator
+    const phaseIndicator = document.getElementById("game-phase");
+    phaseIndicator.textContent = `${details.gamePhase}`;
+
+    // Update current player indicator
+    const currentPlayerIndicator = document.getElementById("current-player");
+    if (details.currentPlayer === PLAYER_1) {
+      currentPlayerIndicator.textContent = "Black";
+    } else if (details.currentPlayer === PLAYER_2) {
+      currentPlayerIndicator.textContent = "White";
+    }
+  }
+}
 
 //A strategy for the RenderManager class and renders the board
 export class BoardRenderer {
