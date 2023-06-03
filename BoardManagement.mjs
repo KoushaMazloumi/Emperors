@@ -209,7 +209,7 @@ export class CityFinder {
             if (cityLength >= CITY_LENGTH_THRESHOLD) {
               cities[player].count++;
               for (let k = i; k < i + cityLength; k++) {
-                cities[player].coordinates.push([i, k]);
+                cities[player].coordinates.push([k, j]);
               }
             }
           }
@@ -239,6 +239,10 @@ export class CityFinder {
         }
       }
     }
+    console.log(
+      "🚀 ~ file: BoardManagement.mjs:244 ~ CityFinder ~ findCities ~ cities:",
+      cities
+    );
     return cities;
   }
 }
@@ -714,6 +718,50 @@ export class UpdateTradeRouteStrategy {
         this.gridCOPY[tradeRouteCoordinatePair[0]][tradeRouteCoordinatePair[1]];
 
       square.isPartOfTradeRoute = true;
+    }
+  }
+  giveUpdatedGrid() {
+    return this.gridCOPY;
+  }
+}
+export class UpdateCityStrategy {
+  constructor() {
+    // Initialize properties
+    this.gridCOPY = [];
+    this.currentCityState = [];
+  }
+
+  // Method to perform the strategy
+  performStrategy(editor, details) {
+    // Store the current state of the grid
+    this.gridCOPY = editor.getGrid();
+    this.currentCityState = details.currentCityState;
+    this.cityCoordinates = [];
+
+    for (
+      let i = 0;
+      i < this.currentCityState[PLAYER_1].coordinates.length;
+      i++
+    ) {
+      this.cityCoordinates.push(this.currentCityState[PLAYER_1].coordinates[i]);
+    }
+    for (
+      let i = 0;
+      i < this.currentCityState[PLAYER_2].coordinates.length;
+      i++
+    ) {
+      this.cityCoordinates.push(this.currentCityState[PLAYER_2].coordinates[i]);
+    }
+
+    this.updateCities();
+  }
+  updateCities() {
+    for (let i = 0; i < this.cityCoordinates.length; i++) {
+      const cityCoordinatePair = this.cityCoordinates[i];
+      const square =
+        this.gridCOPY[cityCoordinatePair[0]][cityCoordinatePair[1]];
+
+      square.isPartOfCity = true;
     }
   }
   giveUpdatedGrid() {

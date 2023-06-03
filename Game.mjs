@@ -40,6 +40,7 @@ import {
   PeninsulaFinder,
   CityFinder,
   UpdateTradeRouteStrategy,
+  UpdateCityStrategy,
 } from "./BoardManagement.mjs";
 import { MapPieceGenerator, MapPiece } from "./MapPieces.mjs";
 import {
@@ -85,6 +86,7 @@ export class Game {
     this.tradeRouteCounter = new TradeRouteCounter();
     this.peninsulaFinder = new PeninsulaFinder();
     this.cityFinder = new CityFinder();
+    this.updateCityStrategy = new UpdateCityStrategy();
   }
 
   // Method to execute a strategy based on the given action and details
@@ -139,6 +141,9 @@ export class Game {
 
           this.gameBoardSearcher.setStrategy(this.cityFinder);
           details.setCurrentCityState(this.gameBoardSearcher.performStrategy());
+
+          this.gameBoardEditor.setStrategy(this.updateCityStrategy);
+          this.gameBoardEditor.performStrategy(details);
 
           // Render the board
           this.gameRenderer.setStrategy(this.boardRendererStrategy);
