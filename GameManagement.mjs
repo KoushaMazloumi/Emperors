@@ -41,12 +41,13 @@ export class TurnManager {
     this.game = game;
     // Initialize the current turn to the first player
     this.currentTurn = 0;
+    this.gamePhase = STARTING_PHASE;
   }
 
   // Method to change turn
   changeTurn(details) {
     this.currentTurn++;
-    this.game.currentTurn = this.currentTurn;
+
     details.setTurn(this.currentTurn);
     // Switch to the other player
     this.game.currentPlayer =
@@ -61,8 +62,8 @@ export class TurnManager {
   checkPhase(details) {
     // If the current turn is the map phase threshold, change the game phase to stone phase
     if (this.currentTurn === MAP_PHASE_TURNS_THRESHOLD) {
+      this.gamePhase = STONE_PHASE;
       details.setGamePhase(STONE_PHASE);
-      this.game.gamePhase = STONE_PHASE;
     }
   }
 }
@@ -132,17 +133,17 @@ export class StrategyDetails {
     this.piece = null;
     this.x = null;
     this.y = null;
+    this.toggleFlag = null;
+    this.cellElement = null;
     this.currentMapPieceIndex = null;
     this.currentEmperorState = null;
     this.currentTradeRouteState = null;
+    this.currentPopulationState = null;
+    this.currentCityState = null;
     this.gamePhase = null;
-    this.toggleFlag = null;
-    this.cellElement = null;
     this.currentTurn = null;
     this.currentPlayer = null;
-    this.currentCityState = null;
     this.mapPiecesReference = null;
-    this.currentPopulationState = null;
   }
   setCurrentPopulationState(currentPopulationState) {
     this.currentPopulationState = currentPopulationState;

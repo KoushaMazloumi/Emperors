@@ -375,7 +375,7 @@ export class EventListener {
     let details = new StrategyDetails()
       .setPiece(piece)
       .setCellElement(cellElement)
-      .setGamePhase(this.game.gamePhase)
+      .setGamePhase(this.game.turnManager.gamePhase)
       .setX(col)
       .setY(row)
       .setToggleFlag(true)
@@ -398,7 +398,7 @@ export class EventListener {
     let details = new StrategyDetails()
       .setCellElement(cellElement)
       .setCurrentMapPieceIndex(this.game.currentMapPieceIndex)
-      .setGamePhase(this.game.gamePhase)
+      .setGamePhase(this.game.turnManager.gamePhase)
       .setPiece(piece)
       .setX(col)
       .setY(row)
@@ -423,15 +423,15 @@ export class EventListener {
       .setY(row)
       .setCurrentMapPieceIndex(this.game.currentMapPieceIndex)
       .setCellElement(cellElement)
-      .setGamePhase(this.game.gamePhase)
+      .setGamePhase(this.game.turnManager.gamePhase)
       .setTurn(this.game.turnManager.currentTurn)
       .setCurrentPlayer(this.game.currentPlayer)
       .build();
 
     // Execute the placeMapPiece or placeStone strategy based on the game phase
-    if (this.game.gamePhase === MAP_PHASE) {
+    if (this.game.turnManager.gamePhase === MAP_PHASE) {
       this.game.executeStrategy("placeMapPiece", details);
-    } else if (this.game.gamePhase === STONE_PHASE) {
+    } else if (this.game.turnManager.gamePhase === STONE_PHASE) {
       this.game.executeStrategy("placeStone", details);
     }
   }

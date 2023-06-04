@@ -56,7 +56,6 @@ import {
 export class Game {
   constructor(STARTING_PHASE) {
     this.strategy = null;
-    this.gamePhase = STARTING_PHASE;
     this.gameBoard = new BoardState(GRID_SIZE);
     this.gameBoardEditor = new BoardStateEditor(this.gameBoard);
     this.gameBoardSearcher = new BoardStateSearcher(this.gameBoard);
@@ -163,11 +162,13 @@ export class Game {
     this.gameBoardSearcher.setStrategy(this.emperorCounter);
     //Update the emperor count for the entire board
     details.setCurrentEmperorState(this.gameBoardSearcher.performStrategy());
+
     this.gameBoardEditor.setStrategy(this.updateEmeperorStrategy);
     this.gameBoardEditor.performStrategy(details);
 
     this.gameBoardSearcher.setStrategy(this.tradeRouteCounter);
     details.setCurrentTradeRouteState(this.gameBoardSearcher.performStrategy());
+
     this.gameBoardEditor.setStrategy(this.updateTradeRouteStrategy);
     this.gameBoardEditor.performStrategy(details);
 
@@ -179,6 +180,7 @@ export class Game {
 
     details.setMapPiecesReference(this.mapPieces);
     this.gameBoardSearcher.setStrategy(this.populationCounter);
+
     details.setCurrentPopulationState(
       this.gameBoardSearcher.performStrategy(details)
     );
