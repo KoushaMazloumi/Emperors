@@ -395,6 +395,64 @@ export class EmperorCounter {
   }
 }
 
+export class PopulationCounter {
+  constructor() {
+    this.grid = null;
+    this.mapPieces = null;
+  }
+
+  // Method to perform the strategy
+  performStrategy(boardStateSearcher, details) {
+    this.grid = boardStateSearcher.grid;
+    this.mapPieces = details.mapPiecesReference;
+    this.currentEmperorState = details.currentEmperorState;
+
+    // Call the countEmperors method and return its result
+    let populationCount = this.countPopulation(this.grid);
+
+    return populationCount;
+  }
+  findEmperorByMapPieceID(array, id) {
+    for (let i = 0; i < array.length; i++) {
+      if (array[i].mapPieceID === id) {
+        return array[i].emperor;
+      }
+    }
+    return null; // return null if no matching mapPieceID is found
+  }
+
+  countPopulation(grid) {
+    let mapPieceSizes = [];
+    for (let i = 0; i < this.mapPieces.length; i++) {
+      let mapPieceSize = this.mapPieces[i].shapeRelativeSquareLocations.length;
+      let mapPieceId = this.mapPieces[i].id;
+      //emperor needs to be grabbed from the this.currentEmperorState via the mapPieceId
+      let mapPieceEmperor = this.findEmperorByMapPieceID(
+        this.currentEmperorState,
+        mapPieceId
+      );
+
+      mapPieceSizes.push({
+        mapPieceSize: mapPieceSize,
+        mapPieceId: mapPieceId,
+        mapPieceEmperor: mapPieceEmperor,
+      });
+    }
+
+    const ruledPopulations = {
+      [PLAYER_1]: 0,
+      [PLAYER_2]: 0,
+    };
+    for (let i = 0; i < mapPieceSizes.length; i++) {
+      if (mapPieceSizes[i].mapPieceEmperor != null) {
+        let mapPieceEmperor = mapPieceSizes[i].mapPieceEmperor;
+        ruledPopulations[mapPieceEmperor] += mapPieceSizes[i].mapPieceSize;
+      }
+    }
+
+    return ruledPopulations;
+  }
+}
 // ********************Move Validation Classes********************
 //Validates moves as allowed or not
 export class MoveValidator {

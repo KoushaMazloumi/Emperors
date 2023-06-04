@@ -41,6 +41,7 @@ import {
   CityFinder,
   UpdateTradeRouteStrategy,
   UpdateCityStrategy,
+  PopulationCounter,
 } from "./BoardManagement.mjs";
 import { MapPieceGenerator, MapPiece } from "./MapPieces.mjs";
 import {
@@ -89,6 +90,7 @@ export class Game {
     this.cityFinder = new CityFinder();
     this.updateCityStrategy = new UpdateCityStrategy();
     this.statusRenderStrategy = new StatusRenderer();
+    this.populationCounter = new PopulationCounter();
   }
 
   // Method to execute a strategy based on the given action and details
@@ -174,6 +176,12 @@ export class Game {
 
     this.gameBoardEditor.setStrategy(this.updateCityStrategy);
     this.gameBoardEditor.performStrategy(details);
+
+    details.setMapPiecesReference(this.mapPieces);
+    this.gameBoardSearcher.setStrategy(this.populationCounter);
+    details.setCurrentPopulationState(
+      this.gameBoardSearcher.performStrategy(details)
+    );
   }
   renderRoutine(details) {
     this.gameRenderer.setStrategy(this.boardRendererStrategy);

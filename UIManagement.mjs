@@ -130,6 +130,21 @@ export class StatusRenderer {
 
     player2EmperorCountElement.textContent = `${player2EmperorCount}`;
     player1EmperorCountElement.textContent = `${player1EmperorCount}`;
+
+    const populations = details.currentPopulationState;
+    let player1Population = 0;
+    let player2Population = 0;
+    if (populations !== null) {
+      player1Population = populations[PLAYER_1];
+      player2Population = populations[PLAYER_2];
+    }
+    const player1PopulationElement =
+      document.getElementById("player1-population");
+    const player2PopulationElement =
+      document.getElementById("player2-population");
+
+    player1PopulationElement.textContent = `${player1Population}`;
+    player2PopulationElement.textContent = `${player2Population}`;
   }
 }
 
