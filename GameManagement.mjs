@@ -53,10 +53,10 @@ export class TurnManager {
     this.game.currentPlayer =
       this.game.currentPlayer === PLAYER_1 ? PLAYER_2 : PLAYER_1;
     console.log("current player", this.game.currentPlayer);
-    // Increment the current map piece index but make sure to not go over the length of this.game.mapPieces
+    // Increment the current map piece index but make sure to not go over the length of map pieces
     this.game.currentMapPieceIndex = Math.min(
       this.game.currentMapPieceIndex + 1,
-      this.game.mapPieces.length - 1
+      this.game.gameBoard.getAllMapPieces().length - 1
     );
   }
   checkPhase(details) {

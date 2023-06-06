@@ -371,7 +371,9 @@ export class EventListener {
     const col = parseInt(cellElement.dataset.col);
 
     // Create a new StrategyDetails object with the necessary information
-    const piece = this.game.getCurrentPiece();
+    const piece = this.game.gameBoard.getSingleMapPiece(
+      this.game.currentMapPieceIndex
+    );
     let details = new StrategyDetails()
       .setPiece(piece)
       .setCellElement(cellElement)
@@ -392,7 +394,9 @@ export class EventListener {
     cellElement.classList.remove("hovered");
 
     // Create a new StrategyDetails object with the necessary information
-    const piece = this.game.getCurrentPiece();
+    const piece = this.game.gameBoard.getSingleMapPiece(
+      this.game.currentMapPieceIndex
+    );
     const row = parseInt(cellElement.dataset.row);
     const col = parseInt(cellElement.dataset.col);
     let details = new StrategyDetails()
@@ -416,7 +420,9 @@ export class EventListener {
     const col = parseInt(cellElement.dataset.col);
 
     // Create a new StrategyDetails object with the necessary information
-    const piece = this.game.getCurrentPiece();
+    const piece = this.game.gameBoard.getSingleMapPiece(
+      this.game.currentMapPieceIndex
+    );
     let details = new StrategyDetails()
       .setPiece(piece)
       .setX(col)

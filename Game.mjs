@@ -195,14 +195,12 @@ export class Game {
 
   initialize() {
     //Initilizate the map pieces
-    this.mapPieces = this.mapPieceGenerator.initializeMapPieces();
-    this.gameLogger.logGeneratedShapes(this.mapPieces);
+    this.gameBoard.setMapPieces(this.mapPieceGenerator.initializeMapPieces());
+    this.gameLogger.logGeneratedShapes(this.gameBoard.getAllMapPieces());
     this.executeStrategy("addNaturalResources");
     this.executeStrategy("renderBoard");
   }
-  getCurrentPiece() {
-    return this.mapPieces[this.currentMapPieceIndex];
-  }
+
   // Method to start the game
   start() {
     // Implementation here...

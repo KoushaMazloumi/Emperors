@@ -40,6 +40,7 @@ import {
 // Our actual board state that needs to remain our single source of truth
 export class BoardState {
   #grid = [];
+  #mapPieces = [];
 
   constructor(GRID_SIZE) {
     // Initialize an empty game board as a 2D array
@@ -53,22 +54,45 @@ export class BoardState {
       for (let j = 0; j < GRID_SIZE; j++) {
         this.#grid[i][j] = null;
       }
+      this.mapPieces = [];
     }
   }
-
+  setMapPieces(mapPieces) {
+    this.#mapPieces = mapPieces;
+  }
   uploadGrid(newGrid) {
     // Update the grid with a new grid
     this.#grid = newGrid;
+    this.updateMapPiecesArray();
+  }
+
+  updateMapPiecesArray() {
+    //iterate through the mapPieces array
+    for (let i = 0; i < this.#mapPieces.length; i++) {
+      for (let row = 0; row < this.#grid.length; row++) {
+        for (let col = 0; col < this.#grid[row].length; col++) {
+          if (
+            this.#grid[row][col] &&
+            this.#grid[row][col].mapPieceID === this.#mapPieces[i].id
+          ) {
+            //once the cell is found, update the this.#mapPieces[i] to match the mapPiece in the grid cell
+            this.#mapPieces[i] = this.#grid[row][col].mapPiece;
+            break;
+          }
+        }
+      }
+    }
   }
 
   getGrid() {
-    let gridCopy = JSON.parse(JSON.stringify(this.#grid));
-    return gridCopy;
+    return this.#grid;
+  }
+  getAllMapPieces() {
+    return this.#mapPieces;
   }
 
-  // Method to get the current state of the game board
-  getMatrix() {
-    // Add code here to return the current state of the game board
+  getSingleMapPiece(mapPieceIndex) {
+    return this.#mapPieces[mapPieceIndex];
   }
 }
 export class BoardStateEditor {
@@ -112,8 +136,26 @@ export class BoardStateEditor {
   }
 
   getGrid() {
-    let gridCopy = JSON.parse(JSON.stringify(this.#board.getGrid()));
-    return gridCopy;
+    this.gridCopy = JSON.parse(JSON.stringify(this.#board.getGrid()));
+
+    this.mapPiecesCopy = JSON.parse(
+      JSON.stringify(this.#board.getAllMapPieces())
+    );
+
+    for (let i = 0; i < this.gridCopy.length; i++) {
+      for (let j = 0; j < this.gridCopy[i].length; j++) {
+        if (
+          this.gridCopy[i][j] !== null &&
+          this.gridCopy[i][j].type === "mapPiece"
+        ) {
+          const index = this.mapPiecesCopy.findIndex(
+            (mapPiece) => mapPiece.id === this.gridCopy[i][j].mapPieceID
+          );
+          this.gridCopy[i][j].mapPiece = this.mapPiecesCopy[index];
+        }
+      }
+    }
+    return this.gridCopy;
   }
 }
 //Helper class for Board State that traverses the grid searches for specific patterns of stones, map pieces or natural resources
@@ -404,7 +446,7 @@ export class PopulationCounter {
   // Method to perform the strategy
   performStrategy(boardStateSearcher, details) {
     this.grid = boardStateSearcher.grid;
-    this.mapPieces = details.mapPiecesReference;
+    this.mapPieces = boardStateSearcher.gameBoard.getAllMapPieces();
     this.currentEmperorState = details.currentEmperorState;
 
     // Call the countEmperors method and return its result
@@ -821,6 +863,7 @@ export class AddStoneStrategy {
   addStone() {
     this.clearFlags();
     const square = this.gridCOPY[this.y][this.x]; // Get the square where the stone is being added
+
     if (square && square.type === "mapPiece") {
       // Check if the square is a map piece
       // Inject the stone into the map piece and board
@@ -828,7 +871,7 @@ export class AddStoneStrategy {
       square.stoneOwner = this.player; // Set the owner of the stone
       square.mapPiece.shapeRelativeStoneFlags[square.pieceSquareIndex] =
         this.player; // Set the owner of the stone in the map piece
-      square.mapPiece.StoneCount++; // Increment the stone count of the map piece
+      square.mapPiece.stoneCount++; // Increment the stone count of the map piece
       square.lastPlayed = true; // Set the last played flag of the square
     }
   }
