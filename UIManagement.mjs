@@ -367,11 +367,7 @@ export class EventListener {
     );
     let details = new StrategyDetails()
       .setPiece(piece)
-      .setCellElement(cellElement)
       .setGamePhase(this.game.turnManager.gamePhase)
-      .setX(col)
-      .setY(row)
-      .setToggleFlag(true)
       .setCurrentMapPieceIndex(this.game.currentMapPieceIndex)
       .build();
 

@@ -10,6 +10,7 @@ import {
   ADJACENT_OFFSETS,
   MAP_PHASE_TURNS_THRESHOLD,
   STONE_PHASE,
+  MAP_PHASE,
   PLAYER_1,
 } from "./Constants.mjs";
 
@@ -42,6 +43,7 @@ import {
   UpdateTradeRouteStrategy,
   UpdateCityStrategy,
   PopulationCounter,
+  MapPieceRotator,
 } from "./BoardManagement.mjs";
 import { MapPieceGenerator, MapPiece } from "./MapPieces.mjs";
 import {
@@ -90,6 +92,7 @@ export class Game {
     this.updateCityStrategy = new UpdateCityStrategy();
     this.statusRenderStrategy = new StatusRenderer();
     this.populationCounter = new PopulationCounter();
+    this.mapPieceRotator = new MapPieceRotator();
   }
 
   // Method to execute a strategy based on the given action and details
@@ -152,8 +155,9 @@ export class Game {
         this.gameRenderer.performStrategy(details);
         break;
       case "rotate":
-        //do stuff to rotate map pieces
-
+        if (this.turnManager.gamePhase === MAP_PHASE) {
+          this.gameBoard.replaceMapPiece(this.mapPieceRotator.rotate(details));
+        }
         break;
       default:
         // Throw an error if the action is unknown

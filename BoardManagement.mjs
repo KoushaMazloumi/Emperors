@@ -60,6 +60,10 @@ export class BoardState {
   setMapPieces(mapPieces) {
     this.#mapPieces = mapPieces;
   }
+
+  replaceMapPiece(mapPieceIndex, newMapPiece) {
+    this.#mapPieces[mapPieceIndex] = newMapPiece;
+  }
   uploadGrid(newGrid) {
     // Update the grid with a new grid
     this.#grid = newGrid;
@@ -158,6 +162,51 @@ export class BoardStateEditor {
     return this.gridCopy;
   }
 }
+
+export class MapPieceRotator {
+  constructor() {
+    this.piece = null;
+  }
+
+  rotate(details) {
+    this.piece = details.piece;
+    const size = this.piece.shape.length;
+    const newShape = Array(size)
+      .fill(null)
+      .map(() => Array(size).fill(0));
+
+    // Rotate the shape
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        newShape[j][size - 1 - i] = this.piece.shape[i][j];
+      }
+    }
+    const newShapeRelativeSquareLocations =
+      this.getshapeRelativeSquareLocations(newShape);
+
+    this.piece.shape = newShape;
+    this.piece.shapeRelativeSquareLocations = newShapeRelativeSquareLocations;
+    return details.currentMapPieceIndex, this.piece;
+  }
+
+  getshapeRelativeSquareLocations(shape) {
+    const shapeRelativeSquareLocations = [];
+    let index = 0;
+    for (let i = 0; i < shape.length; i++) {
+      for (let j = 0; j < shape[i].length; j++) {
+        if (shape[i][j] === 1) {
+          shapeRelativeSquareLocations.push({
+            x: j,
+            y: i,
+            index: index++,
+          });
+        }
+      }
+    }
+    return shapeRelativeSquareLocations;
+  }
+}
+
 //Helper class for Board State that traverses the grid searches for specific patterns of stones, map pieces or natural resources
 export class BoardStateSearcher {
   constructor(gameBoard) {
