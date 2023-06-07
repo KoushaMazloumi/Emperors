@@ -143,9 +143,15 @@ export class StrategyDetails {
     this.gamePhase = null;
     this.currentTurn = null;
     this.currentPlayer = null;
+    this.currentGridCopyState = null;
   }
   setCurrentPopulationState(currentPopulationState) {
     this.currentPopulationState = currentPopulationState;
+    return this;
+  }
+
+  setCurrentGridCopyState(currentGridState) {
+    this.currentGridCopyState = currentGridState;
     return this;
   }
 

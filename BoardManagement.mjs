@@ -131,9 +131,11 @@ export class BoardStateEditor {
     if (!this.strategy) {
       throw new Error("Strategy is not set");
     }
+    console.log("details:", details);
 
+    details.setCurrentGridCopyState(this.#board.getGrid());
     // Perform the strategy on the editor
-    this.strategy.performStrategy(this, details);
+    this.strategy.performStrategy(details);
     console.log("applying changes");
     // Apply the changes made by the strategy
     this.applyChanges();
@@ -740,9 +742,9 @@ export class UpdateEmeperorStrategy {
   }
 
   // Method to perform the strategy
-  performStrategy(editor, details) {
+  performStrategy(details) {
     // Store the current state of the grid
-    this.gridCOPY = editor.getGrid();
+    this.gridCOPY = details.currentGridCopyState;
     this.currentEmperorState = details.currentEmperorState;
     this.updateEmperors();
   }
@@ -782,9 +784,9 @@ export class UpdateTradeRouteStrategy {
   }
 
   // Method to perform the strategy
-  performStrategy(editor, details) {
+  performStrategy(details) {
     // Store the current state of the grid
-    this.gridCOPY = editor.getGrid();
+    this.gridCOPY = details.currentGridCopyState;
     this.currentTradeRouteState = details.currentTradeRouteState;
     this.tradeRouteCoordinates = [];
 
@@ -830,9 +832,9 @@ export class UpdateCityStrategy {
   }
 
   // Method to perform the strategy
-  performStrategy(editor, details) {
+  performStrategy(details) {
     // Store the current state of the grid
-    this.gridCOPY = editor.getGrid();
+    this.gridCOPY = details.currentGridCopyState;
     this.currentCityState = details.currentCityState;
     this.cityCoordinates = [];
 
@@ -879,9 +881,9 @@ export class AddStoneStrategy {
   }
 
   // Method to perform the strategy
-  performStrategy(editor, details) {
+  performStrategy(details) {
     // Store the current state of the grid
-    this.gridCOPY = editor.getGrid();
+    this.gridCOPY = details.currentGridCopyState;
 
     // Set the player and the coordinates of the stone
     this.player = details.currentPlayer;
@@ -935,9 +937,9 @@ export class AddMapPieceStrategy {
   }
 
   // Method to perform the strategy
-  performStrategy(editor, details) {
+  performStrategy(details) {
     // Store the current state of the grid
-    this.gridCOPY = editor.getGrid();
+    this.gridCOPY = details.currentGridCopyState;
     // Set the piece and its placement coordinates
     this.piece = details.piece;
     this.x = details.x - Math.floor(PIECE_SHAPE_SIZE / 2);
@@ -1015,9 +1017,9 @@ export class AddNaturalResourceStrategy {
   }
 
   // Method to perform the strategy
-  performStrategy(editor, details) {
+  performStrategy(details) {
     // Store the current state of the grid
-    this.gridCOPY = editor.getGrid();
+    this.gridCOPY = details.currentGridCopyState;
 
     // Calculate the size of the grid and the quadrants
     this.gridSize = this.gridCOPY.length;

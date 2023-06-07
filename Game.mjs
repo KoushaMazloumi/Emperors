@@ -140,7 +140,7 @@ export class Game {
       case "addNaturalResources":
         // Set the board editor strategy to add natural resources
         this.gameBoardEditor.setStrategy(this.addNaturalResourceStrategy);
-        this.gameBoardEditor.performStrategy();
+        this.gameBoardEditor.performStrategy(details);
         break;
 
       case "renderBoard":
@@ -202,10 +202,11 @@ export class Game {
   }
 
   initialize() {
+    let initializationDetails = new StrategyDetails();
     //Initilizate the map pieces
     this.gameBoard.setMapPieces(this.mapPieceGenerator.initializeMapPieces());
     this.gameLogger.logGeneratedShapes(this.gameBoard.getAllMapPieces());
-    this.executeStrategy("addNaturalResources");
+    this.executeStrategy("addNaturalResources", initializationDetails);
     this.executeStrategy("renderBoard");
   }
 
