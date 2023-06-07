@@ -13,6 +13,7 @@ import {
   PLAYER_1,
   PLAYER_2,
   CITY_LENGTH_THRESHOLD,
+  MAP_PHASE,
 } from "./Constants.mjs";
 
 import {
@@ -686,6 +687,18 @@ export class ValidateMapPiecePlacementStrategy {
     // The placement is valid
     console.log("Valid placement");
     return true;
+  }
+}
+
+export class ValidateMapPieceRotationStrategy {
+  constructor() {
+    this.gamePhase = null;
+  }
+
+  performStrategy(moveValidator, details) {
+    this.gamePhase = details.gamePhase;
+
+    return this.gamePhase === MAP_PHASE;
   }
 }
 

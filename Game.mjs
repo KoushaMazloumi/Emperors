@@ -43,6 +43,7 @@ import {
   UpdateTradeRouteStrategy,
   UpdateCityStrategy,
   PopulationCounter,
+  ValidateMapPieceRotationStrategy,
 } from "./BoardManagement.mjs";
 import { MapPieceGenerator, MapPiece, MapPieceRotator } from "./MapPieces.mjs";
 import {
@@ -92,6 +93,8 @@ export class Game {
     this.statusRenderStrategy = new StatusRenderer();
     this.populationCounter = new PopulationCounter();
     this.mapPieceRotator = new MapPieceRotator();
+    this.validateMapPieceRotationStrategy =
+      new ValidateMapPieceRotationStrategy();
   }
 
   // Method to execute a strategy based on the given action and details
@@ -154,7 +157,8 @@ export class Game {
         this.gameRenderer.performStrategy(details);
         break;
       case "rotate":
-        if (this.turnManager.gamePhase === MAP_PHASE) {
+        this.moveValidator.setStrategy(this.validateMapPieceRotationStrategy);
+        if (this.moveValidator.performStrategy(details)) {
           this.gameBoard.replaceMapPiece(this.mapPieceRotator.rotate(details));
         }
         break;
