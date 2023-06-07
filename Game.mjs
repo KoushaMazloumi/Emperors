@@ -43,9 +43,8 @@ import {
   UpdateTradeRouteStrategy,
   UpdateCityStrategy,
   PopulationCounter,
-  MapPieceRotator,
 } from "./BoardManagement.mjs";
-import { MapPieceGenerator, MapPiece } from "./MapPieces.mjs";
+import { MapPieceGenerator, MapPiece, MapPieceRotator } from "./MapPieces.mjs";
 import {
   RenderManager,
   StatusRenderer,
