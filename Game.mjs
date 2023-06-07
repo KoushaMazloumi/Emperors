@@ -151,7 +151,10 @@ export class Game {
         this.gameRenderer.setStrategy(this.movePreviewRendererStrategy);
         this.gameRenderer.performStrategy(details);
         break;
+      case "rotate":
+        //do stuff to rotate map pieces
 
+        break;
       default:
         // Throw an error if the action is unknown
         throw new Error(`Unknown action: ${action}`);
@@ -160,25 +163,26 @@ export class Game {
   // consolidates the flag routines (emperor, city, trade route, etc.)
   flagRoutine(details) {
     this.gameBoardSearcher.setStrategy(this.emperorCounter);
-    //Update the emperor count for the entire board
+
     details.setCurrentEmperorState(this.gameBoardSearcher.performStrategy());
 
     this.gameBoardEditor.setStrategy(this.updateEmeperorStrategy);
     this.gameBoardEditor.performStrategy(details);
 
     this.gameBoardSearcher.setStrategy(this.tradeRouteCounter);
+
     details.setCurrentTradeRouteState(this.gameBoardSearcher.performStrategy());
 
     this.gameBoardEditor.setStrategy(this.updateTradeRouteStrategy);
     this.gameBoardEditor.performStrategy(details);
 
     this.gameBoardSearcher.setStrategy(this.cityFinder);
+
     details.setCurrentCityState(this.gameBoardSearcher.performStrategy());
 
     this.gameBoardEditor.setStrategy(this.updateCityStrategy);
     this.gameBoardEditor.performStrategy(details);
 
-    details.setMapPiecesReference(this.mapPieces);
     this.gameBoardSearcher.setStrategy(this.populationCounter);
 
     details.setCurrentPopulationState(

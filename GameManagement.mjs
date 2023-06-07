@@ -143,7 +143,6 @@ export class StrategyDetails {
     this.gamePhase = null;
     this.currentTurn = null;
     this.currentPlayer = null;
-    this.mapPiecesReference = null;
   }
   setCurrentPopulationState(currentPopulationState) {
     this.currentPopulationState = currentPopulationState;
@@ -152,10 +151,6 @@ export class StrategyDetails {
 
   setCurrentTradeRouteState(currentTradeRouteState) {
     this.currentTradeRouteState = currentTradeRouteState;
-    return this;
-  }
-  setMapPiecesReference(mapPiecesReference) {
-    this.mapPiecesReference = mapPiecesReference;
     return this;
   }
   setCurrentCityState(currentCityState) {

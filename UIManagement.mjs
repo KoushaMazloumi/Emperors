@@ -319,7 +319,7 @@ export class EventListener {
     // Store the game and game board instances
     this.game = game;
     this.gameBoard = gameBoard;
-
+    this.rotateButton = document.getElementById("rotate-button");
     // Get the grid container element
     this.gridContainer = document.getElementById("game-board");
 
@@ -354,11 +354,28 @@ export class EventListener {
       }
     });
 
-    // Handle undo button click event
-    const undoButton = document.getElementById("undo-button");
-    undoButton.addEventListener("click", () => {
-      this.game.undo();
+    this.rotateButton.addEventListener("click", () => {
+      console.log("rotate");
+      this.handleRotate();
     });
+  }
+
+  handleRotate() {
+    // Create a new StrategyDetails object with the necessary information
+    const piece = this.game.gameBoard.getSingleMapPiece(
+      this.game.currentMapPieceIndex
+    );
+    let details = new StrategyDetails()
+      .setPiece(piece)
+      .setCellElement(cellElement)
+      .setGamePhase(this.game.turnManager.gamePhase)
+      .setX(col)
+      .setY(row)
+      .setToggleFlag(true)
+      .setCurrentMapPieceIndex(this.game.currentMapPieceIndex)
+      .build();
+
+    this.game.executeStrategy("rotate", details);
   }
 
   // Handle mouseover event
