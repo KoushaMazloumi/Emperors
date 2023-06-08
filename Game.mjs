@@ -44,6 +44,7 @@ import {
   UpdateCityStrategy,
   PopulationCounter,
   ValidateMapPieceRotationStrategy,
+  ResourceCounter,
 } from "./BoardManagement.mjs";
 import { MapPieceGenerator, MapPiece, MapPieceRotator } from "./MapPieces.mjs";
 import {
@@ -95,6 +96,7 @@ export class Game {
     this.mapPieceRotator = new MapPieceRotator();
     this.validateMapPieceRotationStrategy =
       new ValidateMapPieceRotationStrategy();
+    this.resourceCounter = new ResourceCounter();
   }
 
   // Method to execute a strategy based on the given action and details
@@ -193,6 +195,12 @@ export class Game {
     this.gameBoardSearcher.setStrategy(this.populationCounter);
 
     details.setCurrentPopulationState(
+      this.gameBoardSearcher.performStrategy(details)
+    );
+
+    this.gameBoardSearcher.setStrategy(this.resourceCounter);
+
+    details.setCurrentResourceState(
       this.gameBoardSearcher.performStrategy(details)
     );
   }

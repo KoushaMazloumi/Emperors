@@ -297,6 +297,60 @@ export class CityFinder {
     return cities;
   }
 }
+
+export class ResourceCounter {
+  constructor() {
+    this.grid = null;
+  }
+
+  performStrategy(boardStateSearcher, details) {
+    this.grid = boardStateSearcher.grid;
+
+    // Call the countEmperors method and return its result
+    let resourceCount = this.countResources();
+
+    return resourceCount;
+  }
+
+  countResources() {
+    let resourceCount = {
+      [PLAYER_1]: {
+        count: 0,
+      },
+      [PLAYER_2]: {
+        count: 0,
+      },
+    };
+
+    for (let i = 0; i < this.grid.length; i++) {
+      for (let j = 0; j < this.grid[i].length; j++) {
+        if (
+          this.grid[i][j] !== null &&
+          this.grid[i][j].type === "naturalResource"
+        ) {
+          const adjacentCells = [
+            this.grid[i - 1] && this.grid[i - 1][j],
+            this.grid[i + 1] && this.grid[i + 1][j],
+            this.grid[i][j - 1],
+            this.grid[i][j + 1],
+          ];
+          adjacentCells.forEach((adjacentCell) => {
+            if (adjacentCell !== null && adjacentCell.stoneOwner === PLAYER_1) {
+              resourceCount[PLAYER_1].count++;
+            } else if (
+              adjacentCell !== null &&
+              adjacentCell.stoneOwner === PLAYER_2
+            ) {
+              resourceCount[PLAYER_2].count++;
+            }
+          });
+        }
+      }
+    }
+
+    return resourceCount;
+  }
+}
 export class TradeRouteCounter {
   constructor() {
     this.grid = null;

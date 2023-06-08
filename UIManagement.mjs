@@ -108,6 +108,24 @@ export class StatusRenderer {
     player1CitiesElement.textContent = `${player1CityCount}`;
     player2CitiesElement.textContent = `${player2CityCount}`;
 
+    // Update player Resource counts in the UI
+    let player1ResourceCount = 0;
+    let player2ResourceCount = 0;
+    const resources = details.currentResourceState;
+    if (cities !== null) {
+      player1ResourceCount = resources[PLAYER_1].count;
+
+      player2ResourceCount = resources[PLAYER_2].count;
+    }
+
+    const player1ResourceElement = document.getElementById("player1-resources");
+
+    const player2ResourceElement = document.getElementById("player2-resources");
+
+    player1ResourceElement.textContent = `${player1ResourceCount}`;
+    player2ResourceElement.textContent = `${player2ResourceCount}`;
+
+    // Update player Trade Route counts in the UI
     let player1TradeRoutesCount = 0;
     let player2TradeRoutesCount = 0;
 
@@ -156,6 +174,7 @@ export class StatusRenderer {
     player2EmperorCountElement.textContent = `${player2EmperorCount}`;
     player1EmperorCountElement.textContent = `${player1EmperorCount}`;
 
+    // Update player population counts in the UI
     const populations = details.currentPopulationState;
     let player1Population = 0;
     let player2Population = 0;
