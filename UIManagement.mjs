@@ -108,6 +108,31 @@ export class StatusRenderer {
     player1CitiesElement.textContent = `${player1CityCount}`;
     player2CitiesElement.textContent = `${player2CityCount}`;
 
+    let player1TradeRoutesCount = 0;
+    let player2TradeRoutesCount = 0;
+
+    let player1TradeRoutesLength = 0;
+    let player2TradeRoutesLength = 0;
+
+    const tradeRoutes = details.currentTradeRouteState;
+    if (tradeRoutes !== null) {
+      player1TradeRoutesCount = tradeRoutes[PLAYER_1].count;
+      player2TradeRoutesCount = tradeRoutes[PLAYER_2].count;
+
+      player1TradeRoutesLength = tradeRoutes[PLAYER_1].totalLength;
+      player2TradeRoutesLength = tradeRoutes[PLAYER_2].totalLength;
+    }
+
+    const player1TradeRoutesElement = document.getElementById(
+      "player1-trade-routes"
+    );
+    const player2TradeRoutesElement = document.getElementById(
+      "player2-trade-routes"
+    );
+
+    player1TradeRoutesElement.textContent = `Count: ${player1TradeRoutesCount}, Length: ${player1TradeRoutesLength}`;
+    player2TradeRoutesElement.textContent = `Count: ${player2TradeRoutesCount}, Length: ${player2TradeRoutesLength}`;
+
     // Update player emperor counts in the UI
     const emperors = details.currentEmperorState;
     let player1EmperorCount = 0;
