@@ -1,28 +1,14 @@
 import {
   GRID_SIZE,
-  GRID_OFFSET,
-  TOTAL_RESOURCES,
-  STARTING_PHASE,
   PIECE_SHAPE_SIZE,
   PIECE_COUNT,
-  INITIAL_SHAPE_VALUE,
-  FORCED_PIECE_SHAPE_THRESHOLD,
-  ADJACENT_OFFSETS,
-  MAP_PHASE_TURNS_THRESHOLD,
-  STONE_PHASE,
-  MAP_PHASE,
   PLAYER_1,
 } from "./Constants.mjs";
 
 import {
   TurnManager,
-  HistoryManager,
-  HistoryTracker,
-  ScoreTracker,
-  Player,
-  GlobalWarming,
+  GlobalWarmingManager,
   Logger,
-  InfoAlert,
   StrategyDetails,
 } from "./GameManagement.mjs";
 import {
@@ -46,7 +32,7 @@ import {
   ValidateMapPieceRotationStrategy,
   ResourceCounter,
 } from "./BoardManagement.mjs";
-import { MapPieceGenerator, MapPiece, MapPieceRotator } from "./MapPieces.mjs";
+import { MapPieceGenerator, MapPieceRotator } from "./MapPieces.mjs";
 import {
   RenderManager,
   StatusRenderer,
@@ -57,7 +43,7 @@ import {
 
 //Main class that manages the overall game state
 export class Game {
-  constructor(STARTING_PHASE) {
+  constructor() {
     this.strategy = null;
     this.gameBoard = new BoardState(GRID_SIZE);
     this.gameBoardEditor = new BoardStateEditor(this.gameBoard);
@@ -97,6 +83,7 @@ export class Game {
     this.validateMapPieceRotationStrategy =
       new ValidateMapPieceRotationStrategy();
     this.resourceCounter = new ResourceCounter();
+    this.globalWarmingManager = new GlobalWarmingManager();
   }
 
   // Method to execute a strategy based on the given action and details
@@ -171,6 +158,16 @@ export class Game {
   }
   // consolidates the flag routines (emperor, city, trade route, etc.)
   flagRoutine(details) {
+    this.gameBoardSearcher.setStrategy(this.peninsulaFinder);
+
+    details.setCurrentPeninsulaState(
+      this.gameBoardSearcher.performStrategy(details)
+    );
+
+    this.gameBoardEditor.applyGlobalWarming(
+      this.globalWarmingManager.routine(details)
+    );
+
     this.gameBoardSearcher.setStrategy(this.emperorCounter);
 
     details.setCurrentEmperorState(this.gameBoardSearcher.performStrategy());
@@ -213,7 +210,7 @@ export class Game {
   }
 
   initialize() {
-    let initializationDetails = new StrategyDetails();
+    let initializationDetails = new StrategyDetails().build();
     //Initilizate the map pieces
     this.gameBoard.setMapPieces(this.mapPieceGenerator.initializeMapPieces());
     this.gameLogger.logGeneratedShapes(this.gameBoard.getAllMapPieces());

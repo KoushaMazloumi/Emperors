@@ -1,41 +1,12 @@
 import {
-  GRID_SIZE,
-  GRID_OFFSET,
-  TOTAL_RESOURCES,
-  STARTING_PHASE,
   PIECE_SHAPE_SIZE,
-  PIECE_COUNT,
-  INITIAL_SHAPE_VALUE,
-  FORCED_PIECE_SHAPE_THRESHOLD,
-  ADJACENT_OFFSETS,
   MAP_PHASE,
   STONE_PHASE,
   PLAYER_1,
   PLAYER_2,
 } from "./Constants.mjs";
 
-import {
-  TurnManager,
-  HistoryManager,
-  HistoryTracker,
-  ScoreTracker,
-  Player,
-  GlobalWarming,
-  Logger,
-  InfoAlert,
-  StrategyDetails,
-} from "./GameManagement.mjs";
-import {
-  BoardState,
-  BoardStateSearcher,
-  BoardStateEditor,
-  MoveValidator,
-  ValidateMapPiecePlacementStrategy,
-  AddStoneStrategy,
-  AddMapPieceStrategy,
-  AddNaturalResourceStrategy,
-} from "./BoardManagement.mjs";
-import { MapPieceGenerator, MapPiece } from "./MapPieces.mjs";
+import { StrategyDetails } from "./GameManagement.mjs";
 
 //A class that manages the different aspects of rendering
 export class RenderManager {
@@ -156,7 +127,7 @@ export class StatusRenderer {
     let player1EmperorCount = 0;
     let player2EmperorCount = 0;
     for (const key in emperors) {
-      if (emperors.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(emperors, key)) {
         if (emperors[key].emperor === PLAYER_1) {
           player1EmperorCount++;
         } else if (emperors[key].emperor === PLAYER_2) {
@@ -199,13 +170,13 @@ export class BoardRenderer {
     this.gridContainer = 0;
   }
   // Method to perform the strategy
-  performStrategy(renderer, details) {
+  performStrategy(renderer) {
     this.boardReference = renderer.getBoard();
     this.gridContainer = renderer.gridContainer;
     this.renderBoard(this.boardReference);
   }
   // Method to render the board
-  renderBoard(board) {
+  renderBoard() {
     if (!this.boardReference) {
       return;
     }

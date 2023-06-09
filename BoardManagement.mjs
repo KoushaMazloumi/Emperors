@@ -2,11 +2,7 @@ import {
   GRID_SIZE,
   GRID_OFFSET,
   TOTAL_RESOURCES,
-  STARTING_PHASE,
   PIECE_SHAPE_SIZE,
-  PIECE_COUNT,
-  INITIAL_SHAPE_VALUE,
-  FORCED_PIECE_SHAPE_THRESHOLD,
   ADJACENT_OFFSETS,
   STONE_PHASE,
   FIRST_STONE_TURNS_THRESHOLD,
@@ -15,27 +11,6 @@ import {
   CITY_LENGTH_THRESHOLD,
   MAP_PHASE,
 } from "./Constants.mjs";
-
-import {
-  TurnManager,
-  HistoryManager,
-  HistoryTracker,
-  ScoreTracker,
-  Player,
-  GlobalWarming,
-  Logger,
-  InfoAlert,
-  StrategyDetails,
-} from "./GameManagement.mjs";
-
-import { MapPieceGenerator, MapPiece } from "./MapPieces.mjs";
-import {
-  RenderManager,
-  StatusRenderer,
-  BoardRenderer,
-  MovePreviewRenderer,
-  EventListener,
-} from "./UIManagement.mjs";
 
 // ********************Board state classes********************
 // Our actual board state that needs to remain our single source of truth
@@ -123,6 +98,11 @@ export class BoardStateEditor {
     // Print the updated board state
   }
 
+  applyGlobalWarming(newGrid) {
+    this.#board.uploadGrid(newGrid);
+    console.log("updated board due to global warming, newGrid: ", newGrid);
+  }
+
   setStrategy(strategy) {
     // Set the strategy for the editor
     this.strategy = strategy;
@@ -134,7 +114,7 @@ export class BoardStateEditor {
     }
     console.log("details:", details);
 
-    details.setCurrentGridCopyState(this.#board.getGrid());
+    details.setCurrentGridCopyState(this.getGrid());
     // Perform the strategy on the editor
     this.strategy.performStrategy(details);
     console.log("applying changes");
@@ -194,17 +174,47 @@ export class PeninsulaFinder {
     this.grid = null;
   }
 
-  performStrategy(boardStateSearcher, details) {
+  performStrategy(boardStateSearcher) {
     this.grid = boardStateSearcher.grid;
 
     // Call the countEmperors method and return its result
     let peninsulas = this.findPeninsulas(this.grid);
-
+    console.log("peninsulas: ", peninsulas);
     return peninsulas;
   }
 
-  findPeninsulas(grid) {
-    let peninsulas = {};
+  findPeninsulas() {
+    const peninsulas = [];
+    const affectedMapPieces = [];
+
+    for (let i = 1; i < this.grid.length - 1; i++) {
+      for (let j = 1; j < this.grid.length - 1; j++) {
+        if (this.grid[i][j] !== null && this.grid[i][j].type === "mapPiece") {
+          // If the cell is not an ocean or natural resource cell
+          const adjacentCells = [
+            this.grid[i - 1][j],
+            this.grid[i + 1][j],
+            this.grid[i][j - 1],
+            this.grid[i][j + 1],
+          ];
+          const oceanCells = adjacentCells.filter((cell) => cell === null);
+          if (oceanCells.length === 3) {
+            // If the cell is surrounded by ocean cells on three sides
+            peninsulas.push({
+              x: j,
+              y: i,
+            });
+            const mapPiece = this.grid[i][j].mapPiece; // Get the map piece at the coordinates
+            const deepCopy = JSON.parse(JSON.stringify(mapPiece)); // Create a deep copy of the map piece
+            affectedMapPieces.push(deepCopy); // Add the deep copy to the array
+          }
+        }
+      }
+    }
+    return {
+      peninsulas,
+      affectedMapPieces,
+    };
   }
 }
 export class CityFinder {
@@ -212,7 +222,7 @@ export class CityFinder {
     this.grid = null;
   }
 
-  performStrategy(boardStateSearcher, details) {
+  performStrategy(boardStateSearcher) {
     this.grid = boardStateSearcher.grid;
 
     // Call the find cities method and return its result
@@ -221,7 +231,7 @@ export class CityFinder {
     return cities;
   }
 
-  findCities(grid) {
+  findCities() {
     const cities = {
       [PLAYER_1]: {
         count: 0,
@@ -303,7 +313,7 @@ export class ResourceCounter {
     this.grid = null;
   }
 
-  performStrategy(boardStateSearcher, details) {
+  performStrategy(boardStateSearcher) {
     this.grid = boardStateSearcher.grid;
 
     // Call the countEmperors method and return its result
@@ -357,7 +367,7 @@ export class TradeRouteCounter {
   }
 
   // Method to perform the strategy
-  performStrategy(boardStateSearcher, details) {
+  performStrategy(boardStateSearcher) {
     this.grid = boardStateSearcher.grid;
 
     // Call the countEmperors method and return its result
@@ -366,7 +376,7 @@ export class TradeRouteCounter {
     return tradeRouteCount;
   }
 
-  countTradeRoutes(grid) {
+  countTradeRoutes() {
     //create an object tradeRoutes that will store the trade routes and their lengths per player
     let tradeRoutes = {
       [PLAYER_1]: {
@@ -451,7 +461,7 @@ export class EmperorCounter {
   }
 
   // Method to perform the strategy
-  performStrategy(boardStateSearcher, details) {
+  performStrategy(boardStateSearcher) {
     this.grid = boardStateSearcher.grid;
 
     // Call the countEmperors method and return its result
@@ -525,7 +535,7 @@ export class PopulationCounter {
     return null; // return null if no matching mapPieceID is found
   }
 
-  countPopulation(grid) {
+  countPopulation() {
     let mapPieceSizes = [];
     for (let i = 0; i < this.mapPieces.length; i++) {
       let mapPieceSize = this.mapPieces[i].shapeRelativeSquareLocations.length;

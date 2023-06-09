@@ -1,37 +1,11 @@
 import {
-  GRID_SIZE,
-  GRID_OFFSET,
-  TOTAL_RESOURCES,
   STARTING_PHASE,
-  PIECE_SHAPE_SIZE,
-  PIECE_COUNT,
-  INITIAL_SHAPE_VALUE,
-  FORCED_PIECE_SHAPE_THRESHOLD,
-  ADJACENT_OFFSETS,
   PLAYER_1,
   PLAYER_2,
   MAP_PHASE_TURNS_THRESHOLD,
   STONE_PHASE,
+  GLOBAL_WARMING_BASE_CHANCE,
 } from "./Constants.mjs";
-
-import {
-  BoardState,
-  BoardStateSearcher,
-  BoardStateEditor,
-  MoveValidator,
-  ValidateMapPiecePlacementStrategy,
-  AddStoneStrategy,
-  AddMapPieceStrategy,
-  AddNaturalResourceStrategy,
-} from "./BoardManagement.mjs";
-import { MapPieceGenerator, MapPiece } from "./MapPieces.mjs";
-import {
-  RenderManager,
-  StatusRenderer,
-  BoardRenderer,
-  MovePreviewRenderer,
-  EventListener,
-} from "./UIManagement.mjs";
 
 //Manages turn switches and phase switches
 
@@ -70,13 +44,6 @@ export class TurnManager {
 //A class to encapsulate our history states
 export class HistoryManager {}
 
-//A child of HistoryManager to track our history stack so we can undo and redo later
-export class HistoryTracker extends HistoryManager {
-  constructor() {
-    this.history = [];
-  }
-}
-
 //Tracks score
 export class ScoreTracker {}
 //A class that stores the player information
@@ -87,17 +54,23 @@ export class Player {
   }
 }
 //A class to handle global warming mechanism
-export class GlobalWarming {
+export class GlobalWarmingManager {
   constructor() {
     this.removedPeninsulas = [];
+    this.gridCOPY = null;
   }
 
-  calculateChance() {
+  routine(details) {
+    this.calculateChance(details);
+    this.handleEvent(details);
+    details.setCurrentGridCopyState(this.gridCOPY);
+    return this.gridCOPY;
+  }
+
+  calculateChance(details) {
+    this.turn = details.currentTurn;
     const baseChance = GLOBAL_WARMING_BASE_CHANCE; // The base chance of global warming
-    const turnsFactor = Math.pow(
-      2,
-      (this.game.turnManager.currentTurn - 10) / 10
-    ); // Exponentially increase chance based on the number of turns
+    const turnsFactor = Math.pow(2, (this.turn - 10) / 10); // Exponentially increase chance based on the number of turns
     const removedPeninsulasFactor =
       this.removedPeninsulas.length > 0
         ? Math.pow(3, this.removedPeninsulas.length - 1) / 25
@@ -108,14 +81,135 @@ export class GlobalWarming {
     );
   }
 
-  handleGlobalWarmingEvent() {}
+  handleEvent(details) {
+    console.log("global warming chance: ", this.globalWarmingChance);
+    const peninsulas = details.currentPeninsulaState.peninsulas;
+    this.gridCOPY = details.currentGridCopyState;
+    const gridsToRemove = peninsulas
+      .filter((peninsula) => {
+        const roll = Math.random();
+        console.log(
+          `Roll for peninsula at (${peninsula.x}, ${peninsula.y}): ${roll}`
+        );
+        if (roll < this.globalWarmingChance) {
+          console.log(
+            `Peninsula at (${peninsula.x}, ${peninsula.y}) affected by global warming.`
+          );
+          this.removedPeninsulas.push({
+            x: peninsula.x,
+            y: peninsula.y,
+            time: Date.now(),
+          });
+          this.calculateChance(details);
+          console.log("new chance:", this.globalWarmingChance);
+          return true;
+        }
+        return false;
+      })
+      .map(({ x, y }) => ({
+        x,
+        y,
+        mapPiece: this.gridCOPY[y][x].mapPiece,
+      }));
+    gridsToRemove.forEach(({ x, y, mapPiece }) =>
+      this.removeGrid(x, y, mapPiece, details)
+    );
+
+    console.log("Removed peninsulas:", this.removedPeninsulas);
+  }
+
+  removeGrid(x, y, mapPiece) {
+    // 1. Update the specific map piece objects
+    const square = this.gridCOPY[y][x];
+    if (
+      square &&
+      square.type === "mapPiece" &&
+      square.mapPiece.id === mapPiece.id
+    ) {
+      const squareIndex = square.pieceSquareIndex;
+      // Update the shapeRelativeSquareLocations and squareLocationStonePlayer arrays
+      mapPiece.shapeRelativeSquareLocations =
+        mapPiece.shapeRelativeSquareLocations
+          .filter((loc) => loc.index !== squareIndex)
+          .map((loc, index) => ({
+            ...loc,
+            index,
+          }));
+      mapPiece.shapeRelativeStoneFlags =
+        mapPiece.shapeRelativeStoneFlags.filter(
+          (player, index) => index !== squareIndex
+        );
+      mapPiece.boardRelativeSquareLocations =
+        mapPiece.boardRelativeSquareLocations
+          .filter((loc, index) => index !== squareIndex)
+          .map((loc, index) => ({
+            ...loc,
+            index,
+          }));
+      // Update the id property of the remaining squares in the map piece
+      for (let i = 0; i < this.gridCOPY.length; i++) {
+        for (let j = 0; j < this.gridCOPY[i].length; j++) {
+          const cell = this.gridCOPY[i][j];
+          if (
+            cell &&
+            cell.type === "mapPiece" &&
+            cell.mapPiece.id === mapPiece.id
+          ) {
+            cell.id = mapPiece.boardRelativeSquareLocations.findIndex(
+              (loc) =>
+                loc.x === cell.cellSquareLocation.x &&
+                loc.y === cell.cellSquareLocation.y
+            );
+          }
+        }
+      }
+      // Recreate the shape and replace the old shape
+      mapPiece.shape = this.recreateShape(
+        mapPiece.shapeRelativeSquareLocations
+      );
+      mapPiece.stones = mapPiece.shapeRelativeStoneFlags.filter(
+        (player) => player !== false
+      ).length;
+      // 2. Update the board grid
+      this.gridCOPY[y][x] = null;
+      // 3. Update the cell references in the entire grid
+      for (let i = 0; i < this.gridCOPY.length; i++) {
+        for (let j = 0; j < this.gridCOPY[i].length; j++) {
+          const cell = this.gridCOPY[i][j];
+          if (
+            cell &&
+            cell.type === "mapPiece" &&
+            cell.mapPiece.id === mapPiece.id
+          ) {
+            if (i === y && j === x) {
+              cell.mapPiece = null;
+              cell.stoneOwner = null;
+              cell.stoneCount = 0;
+              cell.type = null;
+            }
+          }
+        }
+      }
+    }
+  }
+  recreateShape(shapeRelativeSquareLocations) {
+    // Initialize a 7x7 array with all zeros
+    let shape = Array(7)
+      .fill()
+      .map(() => Array(7).fill(0));
+    // For each location in shapeRelativeSquareLocations, set the corresponding position in the shape array to 1
+    shapeRelativeSquareLocations.forEach((location) => {
+      shape[location.y][location.x] = 1;
+    });
+    return shape;
+  }
 }
 
 //A class to centralize all console logs
 export class Logger {
   logGeneratedShapes(pieces) {
     console.log("Generated Shapes:");
-    pieces.forEach((piece, index) => {
+    pieces.forEach((piece) => {
       console.log(`Shape ${piece.id}:`); // Log the ID of the map piece
       console.table(piece.shape);
     });
@@ -145,7 +239,13 @@ export class StrategyDetails {
     this.currentPlayer = null;
     this.currentGridCopyState = null;
     this.currentResourceState = null;
+    this.currentPeninsulaState = null;
   }
+  setCurrentPeninsulaState(currentPeninsulaState) {
+    this.currentPeninsulaState = currentPeninsulaState;
+    return this;
+  }
+
   setCurrentPopulationState(currentPopulationState) {
     this.currentPopulationState = currentPopulationState;
     return this;

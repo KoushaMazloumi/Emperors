@@ -1,44 +1,7 @@
 import {
-  GRID_SIZE,
-  GRID_OFFSET,
-  TOTAL_RESOURCES,
-  STARTING_PHASE,
-  PIECE_SHAPE_SIZE,
-  PIECE_COUNT,
   INITIAL_SHAPE_VALUE,
   FORCED_PIECE_SHAPE_THRESHOLD,
-  ADJACENT_OFFSETS,
 } from "./Constants.mjs";
-
-import {
-  TurnManager,
-  HistoryManager,
-  HistoryTracker,
-  ScoreTracker,
-  Player,
-  GlobalWarming,
-  Logger,
-  InfoAlert,
-  StrategyDetails,
-} from "./GameManagement.mjs";
-import {
-  BoardState,
-  BoardStateSearcher,
-  BoardStateEditor,
-  MoveValidator,
-  ValidateMapPiecePlacementStrategy,
-  AddStoneStrategy,
-  AddMapPieceStrategy,
-  AddNaturalResourceStrategy,
-} from "./BoardManagement.mjs";
-
-import {
-  RenderManager,
-  StatusRenderer,
-  BoardRenderer,
-  MovePreviewRenderer,
-  EventListener,
-} from "./UIManagement.mjs";
 
 //A class that generates map pieces of different shapes and color as per specific rules
 export class MapPieceGenerator {
