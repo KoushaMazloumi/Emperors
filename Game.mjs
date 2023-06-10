@@ -5,12 +5,7 @@ import {
   PLAYER_1,
 } from "./Constants.mjs";
 
-import {
-  TurnManager,
-  GlobalWarmingManager,
-  Logger,
-  StrategyDetails,
-} from "./GameManagement.mjs";
+import { TurnManager, Logger, StrategyDetails } from "./GameManagement.mjs";
 import {
   BoardState,
   BoardStateSearcher,
@@ -83,7 +78,6 @@ export class Game {
     this.validateMapPieceRotationStrategy =
       new ValidateMapPieceRotationStrategy();
     this.resourceCounter = new ResourceCounter();
-    this.globalWarmingManager = new GlobalWarmingManager();
   }
 
   // Method to execute a strategy based on the given action and details
@@ -162,10 +156,6 @@ export class Game {
 
     details.setCurrentPeninsulaState(
       this.gameBoardSearcher.performStrategy(details)
-    );
-
-    this.gameBoardEditor.applyGlobalWarming(
-      this.globalWarmingManager.routine(details)
     );
 
     this.gameBoardSearcher.setStrategy(this.emperorCounter);
