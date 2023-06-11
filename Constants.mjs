@@ -13,7 +13,7 @@ export const MAP_PHASE_TURNS_THRESHOLD = 5;
 export const STONE_PHASE = "stone";
 export const FIRST_STONE_TURNS_THRESHOLD = 6;
 export const CITY_LENGTH_THRESHOLD = 3;
-export const GLOBAL_WARMING_BASE_CHANCE = 0.003;
+export const GLOBAL_WARMING_BASE_CHANCE = 0.3;
 export const ADJACENT_OFFSETS = [
   {
     dx: -1,

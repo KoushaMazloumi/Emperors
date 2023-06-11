@@ -26,7 +26,7 @@ export class TurnManager {
     // Switch to the other player
     this.game.currentPlayer =
       this.game.currentPlayer === PLAYER_1 ? PLAYER_2 : PLAYER_1;
-    console.log("current player", this.game.currentPlayer);
+
     // Increment the current map piece index but make sure to not go over the length of map pieces
     this.game.currentMapPieceIndex = Math.min(
       this.game.currentMapPieceIndex + 1,
@@ -43,6 +43,33 @@ export class TurnManager {
 }
 //A class to encapsulate our history states
 export class HistoryManager {}
+
+export class GlobalWarmingChanceTracker {
+  constructor() {
+    this.globalWarmingChance = null;
+    this.removedPeninsulas = [];
+  }
+
+  // Method to calculate the chance of global warming
+  calculateChance(details) {
+    this.turn = details.currentTurn;
+    if (details.removedPeninsulas) {
+      this.removedPeninsulas = details.removedPeninsulas;
+    }
+
+    const baseChance = GLOBAL_WARMING_BASE_CHANCE; // The base chance of global warming
+    const turnsFactor = Math.pow(2, (this.turn - 10) / 10); // Exponentially increase chance based on the number of turns
+    const removedPeninsulasFactor =
+      this.removedPeninsulas.length > 0
+        ? Math.pow(3, this.removedPeninsulas.length - 1) / 25
+        : 0; // Exponentially decrease chance based on the number of removed peninsulas
+    this.globalWarmingChance = Math.max(
+      0,
+      baseChance * turnsFactor - removedPeninsulasFactor
+    );
+    return this.globalWarmingChance;
+  }
+}
 
 //Tracks score
 export class ScoreTracker {}
@@ -89,12 +116,29 @@ export class StrategyDetails {
     this.currentGridCopyState = null;
     this.currentResourceState = null;
     this.currentPeninsulaState = null;
+    this.removedPeninsulas = null;
+    this.currentGlobalWarmingChance = null;
+    this.removalCoordinates = null;
   }
   setCurrentPeninsulaState(currentPeninsulaState) {
     this.currentPeninsulaState = currentPeninsulaState;
     return this;
   }
 
+  setRemovalCoordinates(removalCoordinates) {
+    this.removalCoordinates = removalCoordinates;
+    return this;
+  }
+
+  setRemovedPeninsulas(removedPeninsulas) {
+    this.removedPeninsulas = removedPeninsulas;
+    return this;
+  }
+
+  setCurrentGlobalWarmingChance(currentGlobalWarmingChance) {
+    this.currentGlobalWarmingChance = currentGlobalWarmingChance;
+    return this;
+  }
   setCurrentPopulationState(currentPopulationState) {
     this.currentPopulationState = currentPopulationState;
     return this;
