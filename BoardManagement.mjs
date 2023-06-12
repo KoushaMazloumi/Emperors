@@ -100,7 +100,6 @@ export class BoardStateEditor {
 
   applyGlobalWarming(newGrid) {
     this.#board.uploadGrid(newGrid);
-    console.log("updated board due to global warming, newGrid: ", newGrid);
   }
 
   setStrategy(strategy) {
@@ -168,6 +167,53 @@ export class BoardStateSearcher {
   }
 }
 // ********************Board Search Strategies********************
+
+export class GlobalWarmingEventFinder {
+  constructor(game) {
+    this.gridCOPY = null;
+    this.removedPeninsulas = [];
+    this.game = game;
+  }
+
+  performStrategy(boardStateSearcher, details) {
+    this.gridCOPY = details.currentGridCopyState;
+
+    console.log("global warming chance: ", details.currentGlobalWarmingChance);
+    const peninsulas = details.currentPeninsulaState.peninsulas;
+    const gridsToRemove = peninsulas
+      .filter((peninsula) => {
+        const roll = Math.random();
+        console.log(
+          `Roll for peninsula at (${peninsula.x}, ${peninsula.y}): ${roll}`
+        );
+        if (roll < details.currentGlobalWarmingChance) {
+          console.log(
+            `Peninsula at (${peninsula.x}, ${peninsula.y}) affected by global warming.`
+          );
+          this.removedPeninsulas.push({
+            x: peninsula.x,
+            y: peninsula.y,
+            time: Date.now(),
+          });
+          details.setRemovedPeninsulas(this.removedPeninsulas);
+          details.setCurrentGlobalWarmingChance(
+            this.game.globalWarmingChanceTracker.calculateChance(details)
+          );
+          console.log("new chance:", details.currentGlobalWarmingChance);
+          return true;
+        }
+        return false;
+      })
+      .map(({ x, y }) => ({
+        x,
+        y,
+        mapPiece: this.gridCOPY[y][x].mapPiece,
+      }));
+
+    console.log("Removed peninsulas:", this.removedPeninsulas);
+    return gridsToRemove;
+  }
+}
 
 export class PeninsulaFinder {
   constructor() {
@@ -300,10 +346,7 @@ export class CityFinder {
         }
       }
     }
-    console.log(
-      "🚀 ~ file: BoardManagement.mjs:244 ~ CityFinder ~ findCities ~ cities:",
-      cities
-    );
+
     return cities;
   }
 }
@@ -448,10 +491,7 @@ export class TradeRouteCounter {
         }
       }
     }
-    console.log(
-      "🚀 ~ file: BoardManagement.mjs:225 ~ TradeRouteCounter ~ countTradeRoutes ~ tradeRoutes:",
-      tradeRoutes
-    );
+
     return tradeRoutes;
   }
 }
@@ -501,10 +541,7 @@ export class EmperorCounter {
       }
       emperors.push({ mapPieceID, emperor });
     }
-    console.log(
-      "🚀 ~ file: BoardManagement.mjs:393 ~ EmperorCounter ~ countEmperors ~ emperors:",
-      emperors
-    );
+
     return emperors;
   }
 }
@@ -583,9 +620,6 @@ export class MoveValidator {
       throw new Error("Strategy is not set");
     }
     this.grid = this.gameBoard.getGrid();
-
-    // Perform the strategy
-    console.log(this.grid);
 
     return this.strategy.performStrategy(this, details);
   }
@@ -713,14 +747,6 @@ export class ValidateMapPiecePlacementStrategy {
 
     // Additional check for the second map piece onwards
     if (currentPieceIndex > 0) {
-      console.log(
-        "checking adjacency for",
-        grid,
-        piece,
-        x,
-        y,
-        currentPieceIndex
-      );
       let isAdjacentToExistingPiece = false;
       for (let i = 0; i < pieceHeight; i++) {
         for (let j = 0; j < pieceWidth; j++) {
@@ -903,6 +929,112 @@ export class UpdateCityStrategy {
 }
 
 // ********************Board Injection Update Strategies********************
+export class GlobalWarmingEventHandlingStrategy {
+  constructor() {
+    // Initialize properties
+    this.gridCOPY = []; // A copy of the current game board
+  }
+
+  // Method to perform the strategy
+  performStrategy(details) {
+    // Store the current state of the grid
+    this.gridCOPY = details.currentGridCopyState;
+    this.removalCoordinates = details.removalCoordinates;
+
+    if (this.removalCoordinates === null) {
+      return;
+    }
+
+    for (let i = 0; i < this.removalCoordinates.length; i++) {
+      const removalCoordinate = this.removalCoordinates[i];
+      this.removeGrids(removalCoordinate.x, removalCoordinate.y);
+    }
+  }
+
+  removeGrids(x, y) {
+    if (this.removalCoordinates === null) {
+      return;
+    }
+    // 1. Update the specific map piece objects
+    const square = this.gridCOPY[y][x];
+    if (square && square.type === "mapPiece") {
+      const squareIndex = square.pieceSquareIndex;
+      // Update the shapeRelativeSquareLocations and squareLocationStonePlayer arrays
+      square.mapPiece.shapeRelativeSquareLocations =
+        square.mapPiece.shapeRelativeSquareLocations
+          .filter((loc) => loc.index !== squareIndex)
+          .map((loc, index) => ({
+            ...loc,
+            index,
+          }));
+      square.mapPiece.shapeRelativeStoneFlags =
+        square.mapPiece.shapeRelativeStoneFlags.filter(
+          (player, index) => index !== squareIndex
+        );
+      square.mapPiece.boardRelativeSquareLocations =
+        square.mapPiece.boardRelativeSquareLocations
+          .filter((loc, index) => index !== squareIndex)
+          .map((loc, index) => ({
+            ...loc,
+            index,
+          }));
+      // Update the id property of the remaining squares in the map piece
+      for (let i = 0; i < this.gridCOPY.length; i++) {
+        for (let j = 0; j < this.gridCOPY[i].length; j++) {
+          const cell = this.gridCOPY[i][j];
+          if (cell && cell.type === "mapPiece") {
+            cell.pieceSquareIndex =
+              cell.mapPiece.boardRelativeSquareLocations.findIndex(
+                (loc) =>
+                  loc.x === cell.cellSquareLocation.x &&
+                  loc.y === cell.cellSquareLocation.y
+              );
+          }
+        }
+      }
+      // Recreate the shape and replace the old shape
+      square.mapPiece.shape = this.recreateShape(
+        square.mapPiece.shapeRelativeSquareLocations
+      );
+      square.mapPiece.stoneCount =
+        square.mapPiece.shapeRelativeStoneFlags.filter(
+          (player) => player !== false
+        ).length;
+      // 2. Update the board grid
+      this.gridCOPY[y][x] = null;
+      // 3. Update the cell references in the entire grid
+      /*       for (let i = 0; i < this.gridCOPY.length; i++) {
+        for (let j = 0; j < this.gridCOPY[i].length; j++) {
+          const cell = this.gridCOPY[i][j];
+          if (cell && cell.type === "mapPiece") {
+            if (i === y && j === x) {
+              cell.mapPiece = null;
+              cell.stoneOwner = null;
+              cell.stoneCount = 0;
+              cell.type = null;
+            }
+          }
+        }
+      } */
+    }
+  }
+  // Method to return the updated game board
+  giveUpdatedGrid() {
+    return this.gridCOPY;
+  }
+  recreateShape(shapeRelativeSquareLocations) {
+    // Initialize a 7x7 array with all zeros
+    let shape = Array(7)
+      .fill()
+      .map(() => Array(7).fill(0));
+    // For each location in shapeRelativeSquareLocations, set the corresponding position in the shape array to 1
+    shapeRelativeSquareLocations.forEach((location) => {
+      shape[location.y][location.x] = 1;
+    });
+    return shape;
+  }
+}
+
 export class AddStoneStrategy {
   constructor() {
     // Initialize properties

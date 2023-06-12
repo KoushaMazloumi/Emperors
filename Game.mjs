@@ -7,9 +7,9 @@ import {
 
 import {
   TurnManager,
-  GlobalWarmingManager,
   Logger,
   StrategyDetails,
+  GlobalWarmingChanceTracker,
 } from "./GameManagement.mjs";
 import {
   BoardState,
@@ -31,6 +31,8 @@ import {
   PopulationCounter,
   ValidateMapPieceRotationStrategy,
   ResourceCounter,
+  GlobalWarmingEventFinder,
+  GlobalWarmingEventHandlingStrategy,
 } from "./BoardManagement.mjs";
 import { MapPieceGenerator, MapPieceRotator } from "./MapPieces.mjs";
 import {
@@ -83,7 +85,10 @@ export class Game {
     this.validateMapPieceRotationStrategy =
       new ValidateMapPieceRotationStrategy();
     this.resourceCounter = new ResourceCounter();
-    this.globalWarmingManager = new GlobalWarmingManager();
+    this.globalWarmingChanceTracker = new GlobalWarmingChanceTracker();
+    this.globalWarmingEventFinder = new GlobalWarmingEventFinder(this);
+    this.globalWarmingEventHandlingStrategy =
+      new GlobalWarmingEventHandlingStrategy();
   }
 
   // Method to execute a strategy based on the given action and details
@@ -95,7 +100,7 @@ export class Game {
         // If the move is valid, set the board editor strategy to add the map piece
         if (this.moveValidator.performStrategy(details)) {
           this.gameBoardEditor.setStrategy(this.addMapPieceStrategy);
-          console.log("details", details);
+
           this.gameBoardEditor.performStrategy(details);
           // Change the turn and render the board
           this.turnManager.changeTurn(details);
@@ -108,13 +113,12 @@ export class Game {
         break;
 
       case "placeStone":
-        console.log("placeStone");
         // Set the move validator strategy to validate stone placement
         this.moveValidator.setStrategy(this.validateStonePlacementStrategy);
         // If the move is valid, set the board editor strategy to add the stone
         if (this.moveValidator.performStrategy(details)) {
           this.gameBoardEditor.setStrategy(this.addStoneStrategy);
-          console.log("details", details);
+
           this.gameBoardEditor.performStrategy(details);
 
           // Change the turn
@@ -164,9 +168,17 @@ export class Game {
       this.gameBoardSearcher.performStrategy(details)
     );
 
-    this.gameBoardEditor.applyGlobalWarming(
-      this.globalWarmingManager.routine(details)
+    details.setCurrentGlobalWarmingChance(
+      this.globalWarmingChanceTracker.calculateChance(details)
     );
+
+    this.gameBoardSearcher.setStrategy(this.globalWarmingEventFinder);
+    details.setRemovalCoordinates(
+      this.gameBoardSearcher.performStrategy(details)
+    );
+
+    this.gameBoardEditor.setStrategy(this.globalWarmingEventHandlingStrategy);
+    this.gameBoardEditor.performStrategy(details);
 
     this.gameBoardSearcher.setStrategy(this.emperorCounter);
 
