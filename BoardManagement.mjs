@@ -12,6 +12,8 @@ import {
   MAP_PHASE,
 } from "./Constants.mjs";
 
+import { HistoryManager } from "./GameManagement.mjs";
+
 // ********************Board state classes********************
 // Our actual board state that needs to remain our single source of truth
 export class BoardState {
@@ -32,6 +34,9 @@ export class BoardState {
       }
       this.mapPieces = [];
     }
+
+    this.historyManager = new HistoryManager();
+    this.historyManager.addState(this.#grid);
   }
   setMapPieces(mapPieces) {
     this.#mapPieces = mapPieces;
@@ -44,6 +49,7 @@ export class BoardState {
     // Update the grid with a new grid
     this.#grid = newGrid;
     this.updateMapPiecesArray();
+    this.historyManager.addState(this.#grid);
   }
 
   updateMapPiecesArray() {

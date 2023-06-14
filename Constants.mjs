@@ -9,11 +9,11 @@ export const INITIAL_SHAPE_VALUE = 1;
 export const FORCED_PIECE_SHAPE_THRESHOLD = 4;
 export const PLAYER_1 = "p1";
 export const PLAYER_2 = "p2";
-export const MAP_PHASE_TURNS_THRESHOLD = 5;
+export const MAP_PHASE_TURNS_THRESHOLD = 10;
 export const STONE_PHASE = "stone";
-export const FIRST_STONE_TURNS_THRESHOLD = 6;
+export const FIRST_STONE_TURNS_THRESHOLD = MAP_PHASE_TURNS_THRESHOLD + 1;
 export const CITY_LENGTH_THRESHOLD = 3;
-export const GLOBAL_WARMING_BASE_CHANCE = 0.3;
+export const GLOBAL_WARMING_BASE_CHANCE = 0.003;
 export const ADJACENT_OFFSETS = [
   {
     dx: -1,

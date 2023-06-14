@@ -42,7 +42,99 @@ export class TurnManager {
   }
 }
 //A class to encapsulate our history states
-export class HistoryManager {}
+export class HistoryManager {
+  constructor() {
+    this.history = [];
+  }
+  //Method to add a state to the history
+  addState(state) {
+    this.history.push(state);
+
+    let lastTwoStatesComparisson = this.compareLastTwoStates();
+    if (lastTwoStatesComparisson === false) {
+      this.undo();
+    }
+  }
+  //Method to undo the last state
+  undo() {
+    this.history.pop();
+  }
+  //Method to get the last state
+  getLastState() {
+    return this.history[this.history.length - 1];
+  }
+  //Method to get the size of the history
+  getHistorySize() {
+    return this.history.length;
+  }
+  //Method to clear the history
+  clearHistory() {
+    this.history = [];
+  }
+
+  compareLastTwoStates() {
+    if (this.history.length < 2) {
+      return true;
+    }
+    const lastState = this.history[this.history.length - 1];
+    const secondLastState = this.history[this.history.length - 2];
+    if (!lastState || !secondLastState) {
+      return false;
+    }
+
+    let differences = [];
+    for (let i = 0; i < lastState.length; i++) {
+      for (let j = 0; j < lastState[i].length; j++) {
+        let diff = this.deepEqual(lastState[i][j], secondLastState[i][j]);
+        if (diff !== true) {
+          differences.push({ row: i, col: j, differences: diff });
+        }
+      }
+    }
+
+    return differences.length > 0 ? differences : false;
+  }
+
+  deepEqual(a, b, path = "") {
+    if (a === b) {
+      return true;
+    }
+
+    if (
+      typeof a !== "object" ||
+      a === null ||
+      typeof b !== "object" ||
+      b === null
+    ) {
+      return [{ path, newValue: a, oldValue: b }];
+    }
+
+    let newKeys = Object.keys(a),
+      oldKeys = Object.keys(b);
+
+    if (newKeys.length !== oldKeys.length) {
+      return [{ path, newKeys, oldKeys }];
+    }
+
+    let diffs = [];
+    for (let key of newKeys) {
+      if (!oldKeys.includes(key)) {
+        diffs.push({
+          path: `${path}.${key}`,
+          newValue: a[key],
+          oldValue: undefined,
+        });
+      } else {
+        let diff = this.deepEqual(a[key], b[key], `${path}.${key}`);
+        if (diff !== true) {
+          diffs = diffs.concat(diff);
+        }
+      }
+    }
+
+    return diffs.length > 0 ? diffs : true;
+  }
+}
 
 export class GlobalWarmingChanceTracker {
   constructor() {
