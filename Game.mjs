@@ -213,14 +213,13 @@ export class Game {
 
     details.setCurrentResourceState(
       this.gameBoardSearcher.performStrategy(details)
-    );
-
-    // Calculate scores based on current game state
+    );    // Calculate scores based on current game state
     const scores = this.scoreTracker.calculateScores(
       details.currentEmperorState,
       details.currentTradeRouteState,
       details.currentCityState,
-      details.currentPopulationState
+      details.currentPopulationState,
+      details.currentResourceState
     );
     
     // Add scores to details object so StatusRenderer can access them

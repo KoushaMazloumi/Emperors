@@ -172,7 +172,7 @@ export class ScoreTracker {
     };
   }
   
-  calculateScores(emperorState, tradeRouteState, cityState, populationState) {
+  calculateScores(emperorState, tradeRouteState, cityState, populationState, resourceState) {
     // Reset scores
     this.scores = {
       [PLAYER_1]: 0,
@@ -211,18 +211,36 @@ export class ScoreTracker {
     }
     
     // Add trade route points (1 point per route plus points for gaps)
-    if (tradeRouteState && tradeRouteState[PLAYER_1] && tradeRouteState[PLAYER_2]) {
-      this.scores[PLAYER_1] += tradeRouteState[PLAYER_1].count;
-      this.scores[PLAYER_1] += tradeRouteState[PLAYER_1].totalLength;
+    if (tradeRouteState) {
+      if (tradeRouteState[PLAYER_1]) {
+        this.scores[PLAYER_1] += tradeRouteState[PLAYER_1].count;
+        this.scores[PLAYER_1] += tradeRouteState[PLAYER_1].totalLength;
+      }
       
-      this.scores[PLAYER_2] += tradeRouteState[PLAYER_2].count;
-      this.scores[PLAYER_2] += tradeRouteState[PLAYER_2].totalLength;
+      if (tradeRouteState[PLAYER_2]) {
+        this.scores[PLAYER_2] += tradeRouteState[PLAYER_2].count;
+        this.scores[PLAYER_2] += tradeRouteState[PLAYER_2].totalLength;
+      }
     }
     
     // Add city points (1 point per city)
-    if (cityState && cityState[PLAYER_1] && cityState[PLAYER_2]) {
-      this.scores[PLAYER_1] += cityState[PLAYER_1].count;
-      this.scores[PLAYER_2] += cityState[PLAYER_2].count;
+    if (cityState) {
+      if (cityState[PLAYER_1]) {
+        this.scores[PLAYER_1] += cityState[PLAYER_1].count;
+      }
+      if (cityState[PLAYER_2]) {
+        this.scores[PLAYER_2] += cityState[PLAYER_2].count;
+      }
+    }
+    
+    // Add resource points (1 point per resource)
+    if (resourceState) {
+      if (resourceState[PLAYER_1]) {
+        this.scores[PLAYER_1] += resourceState[PLAYER_1].count;
+      }
+      if (resourceState[PLAYER_2]) {
+        this.scores[PLAYER_2] += resourceState[PLAYER_2].count;
+      }
     }
     
     return this.scores;
