@@ -718,9 +718,21 @@ export class ValidateMapPiecePlacementStrategy {
     const pieceWidth = piece.shape[0].length;
     const pieceHeight = piece.shape.length;
 
+    // Store original click coordinates for logging
+    const clickX = x;
+    const clickY = y;
+
     // Adjust the placement coordinates to align with the center of the piece
     x = x - Math.floor(PIECE_SHAPE_SIZE / 2);
     y = y - Math.floor(PIECE_SHAPE_SIZE / 2);
+
+    // Add Debug Logging
+    console.log("Attempting placement:");
+    console.log("- Original click:", clickX, clickY);
+    console.log("- Adjusted position:", x, y);
+    console.log("- Piece shape:", JSON.stringify(piece.shape));
+    console.log("- Piece dimensions:", pieceWidth, pieceHeight);
+    console.log("Placing piece with ID:", piece.id); // Added log
 
     // Check if the active cells of the piece fit on the board
     for (let i = 0; i < pieceHeight; i++) {
@@ -743,10 +755,18 @@ export class ValidateMapPiecePlacementStrategy {
     // Check if the cells that would be occupied by placing the map piece are empty
     for (let i = 0; i < pieceHeight; i++) {
       for (let j = 0; j < pieceWidth; j++) {
-        if (piece.shape[i][j] === 1 && grid[y + i][x + j] !== null) {
-          // The placement overlaps with an existing piece
-          console.log(`Overlap at grid[${y + i}][${x + j}], piece shape[${i}][${j}]`);
-          return false;
+        if (piece.shape[i][j] === 1) { // Only check active cells of the piece
+          const boardY = y + i;
+          const boardX = x + j;
+          
+          // Check if the corresponding board cell is already occupied
+          if (grid[boardY][boardX] !== null) {
+            // The placement overlaps with an existing piece
+            // console.log(`Overlap at grid[${boardY}][${boardX}], piece shape[${i}][${j}]`); // Original log removed/commented
+            console.log(`Overlap: board[${boardY}][${boardX}] would overlap with piece[${i}][${j}]`); // Added log
+            console.log(`Board cell contains:`, grid[boardY][boardX]); // Added log
+            return false;
+          }
         }
       }
     }
