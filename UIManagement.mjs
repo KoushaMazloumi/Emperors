@@ -160,6 +160,20 @@ export class StatusRenderer {
 
     player1PopulationElement.textContent = `${player1Population}`;
     player2PopulationElement.textContent = `${player2Population}`;
+
+    // Update score display if scores are available
+    if (details.currentScores) {
+      const player1ScoreElement = document.getElementById("player1-score");
+      const player2ScoreElement = document.getElementById("player2-score");
+      
+      // Check if elements exist before setting textContent
+      if (player1ScoreElement) {
+        player1ScoreElement.textContent = `${details.currentScores[PLAYER_1]}`;
+      }
+      if (player2ScoreElement) {
+        player2ScoreElement.textContent = `${details.currentScores[PLAYER_2]}`;
+      }
+    }
   }
 }
 

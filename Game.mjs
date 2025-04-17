@@ -10,6 +10,7 @@ import {
   Logger,
   StrategyDetails,
   GlobalWarmingChanceTracker,
+  ScoreTracker // Add ScoreTracker import
 } from "./GameManagement.mjs";
 import {
   BoardState,
@@ -89,6 +90,7 @@ export class Game {
     this.globalWarmingEventFinder = new GlobalWarmingEventFinder(this);
     this.globalWarmingEventHandlingStrategy =
       new GlobalWarmingEventHandlingStrategy();
+    this.scoreTracker = new ScoreTracker(); // Initialize ScoreTracker
   }
 
   // Method to execute a strategy based on the given action and details
@@ -212,6 +214,17 @@ export class Game {
     details.setCurrentResourceState(
       this.gameBoardSearcher.performStrategy(details)
     );
+
+    // Calculate scores based on current game state
+    const scores = this.scoreTracker.calculateScores(
+      details.currentEmperorState,
+      details.currentTradeRouteState,
+      details.currentCityState,
+      details.currentPopulationState
+    );
+    
+    // Add scores to details object so StatusRenderer can access them
+    details.setCurrentScores(scores);
   }
   renderRoutine(details) {
     this.gameRenderer.setStrategy(this.boardRendererStrategy);

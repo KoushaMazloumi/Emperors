@@ -1,10 +1,10 @@
 import {
-  STARTING_PHASE,
   PLAYER_1,
   PLAYER_2,
-  MAP_PHASE_TURNS_THRESHOLD,
-  STONE_PHASE,
-  GLOBAL_WARMING_BASE_CHANCE,
+  STARTING_PHASE, // Add STARTING_PHASE
+  MAP_PHASE_TURNS_THRESHOLD, // Add MAP_PHASE_TURNS_THRESHOLD
+  STONE_PHASE, // Add STONE_PHASE
+  GLOBAL_WARMING_BASE_CHANCE // Add GLOBAL_WARMING_BASE_CHANCE
 } from "./Constants.mjs";
 
 //Manages turn switches and phase switches
@@ -164,7 +164,75 @@ export class GlobalWarmingChanceTracker {
 }
 
 //Tracks score
-export class ScoreTracker {}
+export class ScoreTracker {
+  constructor() {
+    this.scores = {
+      [PLAYER_1]: 0,
+      [PLAYER_2]: 0
+    };
+  }
+  
+  calculateScores(emperorState, tradeRouteState, cityState, populationState) {
+    // Reset scores
+    this.scores = {
+      [PLAYER_1]: 0,
+      [PLAYER_2]: 0
+    };
+    
+    // Add emperor points (1 point per emperor)
+    if (emperorState) {
+      // Check if emperorState is an array before iterating
+      if (Array.isArray(emperorState)) {
+        for (const emperor of emperorState) {
+          if (emperor.emperor === PLAYER_1) {
+            this.scores[PLAYER_1] += 1;
+          } else if (emperor.emperor === PLAYER_2) {
+            this.scores[PLAYER_2] += 1;
+          }
+        }
+      } else {
+        // Handle the case where emperorState is an object (as seen in UIManagement.mjs)
+        for (const key in emperorState) {
+          if (Object.prototype.hasOwnProperty.call(emperorState, key)) {
+            if (emperorState[key].emperor === PLAYER_1) {
+              this.scores[PLAYER_1] += 1;
+            } else if (emperorState[key].emperor === PLAYER_2) {
+              this.scores[PLAYER_2] += 1;
+            }
+          }
+        }
+      }
+    }
+    
+    // Add population points (1 point per square in ruled map pieces)
+    if (populationState) {
+      this.scores[PLAYER_1] += populationState[PLAYER_1] || 0; // Add || 0 for safety
+      this.scores[PLAYER_2] += populationState[PLAYER_2] || 0; // Add || 0 for safety
+    }
+    
+    // Add trade route points (1 point per route plus points for gaps)
+    if (tradeRouteState && tradeRouteState[PLAYER_1] && tradeRouteState[PLAYER_2]) {
+      this.scores[PLAYER_1] += tradeRouteState[PLAYER_1].count;
+      this.scores[PLAYER_1] += tradeRouteState[PLAYER_1].totalLength;
+      
+      this.scores[PLAYER_2] += tradeRouteState[PLAYER_2].count;
+      this.scores[PLAYER_2] += tradeRouteState[PLAYER_2].totalLength;
+    }
+    
+    // Add city points (1 point per city)
+    if (cityState && cityState[PLAYER_1] && cityState[PLAYER_2]) {
+      this.scores[PLAYER_1] += cityState[PLAYER_1].count;
+      this.scores[PLAYER_2] += cityState[PLAYER_2].count;
+    }
+    
+    return this.scores;
+  }
+  
+  getScores() {
+    return this.scores;
+  }
+}
+
 //A class that stores the player information
 export class Player {
   constructor() {
@@ -211,6 +279,7 @@ export class StrategyDetails {
     this.removedPeninsulas = null;
     this.currentGlobalWarmingChance = null;
     this.removalCoordinates = null;
+    this.currentScores = null; // Add currentScores property
   }
   setCurrentPeninsulaState(currentPeninsulaState) {
     this.currentPeninsulaState = currentPeninsulaState;
@@ -231,6 +300,12 @@ export class StrategyDetails {
     this.currentGlobalWarmingChance = currentGlobalWarmingChance;
     return this;
   }
+
+  setCurrentScores(scores) { // Add setCurrentScores method
+    this.currentScores = scores;
+    return this;
+  }
+
   setCurrentPopulationState(currentPopulationState) {
     this.currentPopulationState = currentPopulationState;
     return this;
