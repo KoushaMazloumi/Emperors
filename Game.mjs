@@ -228,9 +228,27 @@ export class Game {
   renderRoutine(details) {
     this.gameRenderer.setStrategy(this.boardRendererStrategy);
     this.gameRenderer.performStrategy();
+   // Apply visual red pulse effect to cells removed by global warming
+   this.applyGlobalWarmingPulse(details.removedPeninsulas);
 
     this.gameRenderer.setStrategy(this.statusRenderStrategy);
     this.gameRenderer.performStrategy(details);
+  }
+
+  // Adds a red pulse effect to cells removed by global warming
+  applyGlobalWarmingPulse(removedPeninsulas) {
+    if (!removedPeninsulas || !Array.isArray(removedPeninsulas)) return;
+    removedPeninsulas.forEach(({ x, y, time }) => {
+      const selector = `.cell[data-row="${y}"][data-col="${x}"]`;
+      const cell = document.querySelector(selector);
+      if (cell) {
+        cell.classList.add('removed-peninsula');
+        const elapsed = Date.now() - time;
+        cell.style.setProperty('--time-since-affected', elapsed);
+        // Remove the class after animation duration
+        setTimeout(() => cell.classList.remove('removed-peninsula'), 2000);
+      }
+    });
   }
 
   initialize() {

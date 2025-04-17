@@ -47,8 +47,6 @@ td {
   padding: 2%;
   text-align: left;
 }
-td {
-}
 th[colspan="2"] {
   text-align: center;
 }
@@ -200,16 +198,10 @@ th[colspan="2"] {
 .stone-player2 {
   color: white;
 }
-@keyframes ripple {
-  0% {
-    box-shadow: 0px 0px 0px 1px rgba(135, 206, 235, 0.7);
-  }
-  50% {
-    box-shadow: 0px 0px 0px 20px rgba(135, 206, 235, 0.1);
-  }
-  100% {
-    box-shadow: 0px 0px 0px 40px rgba(135, 206, 235, 0);
-  }
+@keyframes red-ripple {
+  0% { box-shadow: 0px 0px 0px 1px rgba(255, 0, 0, 0.7); }
+  50% { box-shadow: 0px 0px 0px 20px rgba(255, 0, 0, 0.1); }
+  100% { box-shadow: 0px 0px 0px 40px rgba(255, 0, 0, 0); }
 }
 
 .removed-peninsula {
@@ -224,11 +216,11 @@ th[colspan="2"] {
   height: 1%;
   top: 49%;
   left: 49%;
-  background: rgba(135, 206, 235, 0.4);
+  background: rgba(255, 0, 0, 0.4);
   border-radius: 50%;
   --animation-iteration-count: max(
     0,
     calc(10 - var(--time-since-affected) / 1000)
   );
-  animation: ripple 1.25s ease-out var(--animation-iteration-count);
+  animation: red-ripple 1.25s ease-out var(--animation-iteration-count);
 }
