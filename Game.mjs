@@ -243,10 +243,8 @@ export class Game {
       const cell = document.querySelector(selector);
       if (cell) {
         cell.classList.add('removed-peninsula');
-        const elapsed = Date.now() - time;
-        cell.style.setProperty('--time-since-affected', elapsed);
-        // Remove the class after animation duration
-        setTimeout(() => cell.classList.remove('removed-peninsula'), 2000);
+        // Remove the class after animation duration (3 pulses * 1s = 3s)
+        setTimeout(() => cell.classList.remove('removed-peninsula'), 3000);
       }
     });
   }

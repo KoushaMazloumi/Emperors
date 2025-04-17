@@ -218,9 +218,5 @@ th[colspan="2"] {
   left: 49%;
   background: rgba(255, 0, 0, 0.4);
   border-radius: 50%;
-  --animation-iteration-count: max(
-    0,
-    calc(10 - var(--time-since-affected) / 1000)
-  );
-  animation: red-ripple 1.25s ease-out var(--animation-iteration-count);
+  animation: red-ripple 1s ease-out 3;
 }
