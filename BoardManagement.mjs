@@ -745,7 +745,7 @@ export class ValidateMapPiecePlacementStrategy {
       for (let j = 0; j < pieceWidth; j++) {
         if (piece.shape[i][j] === 1 && grid[y + i][x + j] !== null) {
           // The placement overlaps with an existing piece
-          console.log("Invalid placement overlap");
+          console.log(`Overlap at grid[${y + i}][${x + j}], piece shape[${i}][${j}]`);
           return false;
         }
       }
