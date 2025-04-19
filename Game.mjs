@@ -238,18 +238,71 @@ export class Game {
 
     this.gameRenderer.setStrategy(this.statusRenderStrategy);
     this.gameRenderer.performStrategy(details);
-  }
-
-  // Adds a red pulse effect to cells removed by global warming
+  }  // Adds a red pulse effect to cells removed by global warming
   applyGlobalWarmingPulse(removedPeninsulas) {
-    if (!removedPeninsulas || !Array.isArray(removedPeninsulas)) return;
-    removedPeninsulas.forEach(({ x, y, time }) => {
-      const selector = `.cell[data-row="${y}"][data-col="${x}"]`;
-      const cell = document.querySelector(selector);
-      if (cell) {
-        cell.classList.add('removed-peninsula');
-        // Remove the class after animation duration (3 pulses * 1s = 3s)
-        setTimeout(() => cell.classList.remove('removed-peninsula'), 3000);
+    // Initialize active pulses tracking if not already done
+    if (!this.activePulses) {
+      this.activePulses = new Map(); // Map to store active pulse animations
+    }
+    
+    const ANIMATION_DURATION = 3000; // 3 seconds total (3 iterations of 1s each)
+    const now = Date.now();
+    
+    // Apply new pulses
+    if (removedPeninsulas && Array.isArray(removedPeninsulas)) {
+      removedPeninsulas.forEach(({ x, y, time }) => {
+        const pulseKey = `${x},${y}`;
+        
+        // Skip if we've already started a pulse animation for this cell recently
+        if (this.activePulses.has(pulseKey)) return;
+        
+        // Store the cell coordinates, start time, and end time for tracking
+        const startTime = now;
+        const endTime = startTime + ANIMATION_DURATION;
+        this.activePulses.set(pulseKey, { x, y, startTime, endTime });
+        
+        // Apply the animation class with fresh animation
+        const selector = `.cell[data-row="${y}"][data-col="${x}"]`;
+        const cell = document.querySelector(selector);
+        if (cell) {
+          cell.classList.add('removed-peninsula');
+          cell.style.setProperty('--pulse-iterations', '3');
+          cell.style.setProperty('--pulse-delay', '0s');
+          
+          // Remove tracking after animation duration
+          setTimeout(() => {
+            this.activePulses.delete(pulseKey);
+          }, ANIMATION_DURATION);
+        }
+      });
+    }
+    
+    // Reapply animation to all active pulses with correct timing
+    this.activePulses.forEach((pulse, key) => {
+      if (now < pulse.endTime) {
+        const selector = `.cell[data-row="${pulse.y}"][data-col="${pulse.x}"]`;
+        const cell = document.querySelector(selector);
+        if (cell) {
+          // Calculate remaining time and iterations
+          const elapsedMs = now - pulse.startTime;
+          const remainingMs = pulse.endTime - now;
+          
+          // Each iteration is 1000ms (1s)
+          const iterationProgress = (elapsedMs % 1000) / 1000;
+          const completedIterations = Math.floor(elapsedMs / 1000);
+          const remainingIterations = 3 - completedIterations;
+          
+          // Apply the animation with calculated timing
+          cell.classList.add('removed-peninsula');
+          cell.style.setProperty('--pulse-iterations', remainingIterations);
+          
+          // Set delay as negative value to start from the correct point in the animation
+          const delayValue = -1 * iterationProgress + 's';
+          cell.style.setProperty('--pulse-delay', delayValue);
+        }
+      } else {
+        // Remove expired pulses
+        this.activePulses.delete(key);
       }
     });
   }

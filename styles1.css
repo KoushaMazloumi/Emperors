@@ -219,7 +219,12 @@ th[colspan="2"] {
   left: 49%;
   background: rgba(255, 0, 0, 0.4);
   border-radius: 50%;
-  animation: red-ripple 1s ease-out 3;
+  /* Using animation-play-state to control the animation */
+  animation: red-ripple 1s ease-out infinite;
+  /* The animation will run for the specified duration */
+  animation-iteration-count: var(--pulse-iterations, 3);
+  /* Use a custom property to track animation progress */
+  animation-delay: var(--pulse-delay, 0s);
 }
 
 /* Auto-place button states */
