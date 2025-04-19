@@ -343,17 +343,24 @@ export class MovePreviewRenderer {
 }
 
 // EventListener class
-export class EventListener {
-  constructor(game, gameBoard) {
+export class EventListener {  constructor(game, gameBoard) {
     // Store the game and game board instances
     this.game = game;
     this.gameBoard = gameBoard;
     this.rotateButton = document.getElementById("rotate-button");
+    this.autoplaceButton = document.getElementById("autoplace-button");
+    this.autoplaceAllButton = document.getElementById("autoplace-all-button");
     // Get the grid container element
     this.gridContainer = document.getElementById("game-board");
 
     // Attach event listeners to the grid container and undo button
     this.attachEventListeners();
+    
+    // Initialize button states (after a small delay to ensure game is initialized)
+    setTimeout(() => {
+      this.updateAutoplaceButtonState();
+      this.updateAutoplaceAllButtonState();
+    }, 0);
   }
 
   // Attach event listeners to the grid container and undo button
@@ -381,14 +388,49 @@ export class EventListener {
         this.handleClick(cellElement);
         console.log(cellElement);
       }
-    });
-
-    this.rotateButton.addEventListener("click", () => {
+    });    this.rotateButton.addEventListener("click", () => {
       console.log("rotate");
       this.handleRotate();
-    });
+    });    // Add autoplace button event listener
+    if (this.autoplaceButton) {
+      let isProcessing = false;
+      this.autoplaceButton.addEventListener("click", () => {
+        // Prevent multiple rapid clicks
+        if (isProcessing || this.autoplaceButton.disabled) return;
+        
+        isProcessing = true;
+        this.autoplaceButton.disabled = true;
+        
+        console.log("autoplace clicked");
+        this.handleAutoplace()
+          .finally(() => {
+            isProcessing = false;
+            this.updateAutoplaceButtonState();
+            this.updateAutoplaceAllButtonState();
+          });
+      });
+    }
+    
+    // Add autoplace-all button event listener
+    if (this.autoplaceAllButton) {
+      let isProcessingAll = false;
+      this.autoplaceAllButton.addEventListener("click", () => {
+        // Prevent multiple rapid clicks
+        if (isProcessingAll || this.autoplaceAllButton.disabled) return;
+        
+        isProcessingAll = true;
+        this.autoplaceAllButton.disabled = true;
+        
+        console.log("autoplace all clicked");
+        this.handleAutoplaceAll()
+          .finally(() => {
+            isProcessingAll = false;
+            this.updateAutoplaceButtonState();
+            this.updateAutoplaceAllButtonState();
+          });
+      });
+    }
   }
-
   handleRotate() {
     // Create a new StrategyDetails object with the necessary information
     const piece = this.game.gameBoard.getSingleMapPiece(
@@ -401,6 +443,96 @@ export class EventListener {
       .build();
 
     this.game.executeStrategy("rotate", details);
+    
+    // NEW: Update button state after rotation
+    this.updateAutoplaceButtonState();
+  }
+  
+  /**
+   * Handles the autoplace button click.
+   * Attempts to automatically place the current map piece.
+   * @returns {Promise} Resolves when placement is complete
+   */  async handleAutoplace() {
+    // Only process if we're in the map phase
+    if (this.game.turnManager.gamePhase === MAP_PHASE) {
+      try {
+        // Get the current map piece
+        const piece = this.game.gameBoard.getSingleMapPiece(
+          this.game.currentMapPieceIndex
+        );
+        
+        // Create strategy details
+        let details = new StrategyDetails()
+          .setPiece(piece)
+          .setCurrentMapPieceIndex(this.game.currentMapPieceIndex)
+          .setGamePhase(this.game.turnManager.gamePhase)
+          .setTurn(this.game.turnManager.currentTurn)
+          .setCurrentPlayer(this.game.currentPlayer)
+          .build();
+          
+        // Execute the autoplaceMapPiece strategy
+        const result = this.game.executeStrategy("autoplaceMapPiece", details);
+        
+        // Show feedback based on result
+        if (result) {
+          this.showFeedback("Piece placed successfully", "success");
+        } else {
+          this.showFeedback("No valid placement found", "error");
+        }
+        
+        return result;
+      } catch (error) {
+        console.error("Error in autoplace:", error);
+        this.showFeedback("Error during placement", "error");
+        return false;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Handles the autoplace-all button click.
+   * Attempts to automatically place all remaining map pieces.
+   * @returns {Promise} Resolves when all placements are complete
+   */
+  async handleAutoplaceAll() {
+    // Only process if we're in the map phase
+    if (this.game.turnManager.gamePhase === MAP_PHASE) {
+      try {
+        const allMapPieces = this.game.gameBoard.getAllMapPieces();
+        const startIndex = this.game.currentMapPieceIndex;
+        let placedCount = 0;
+        let failedCount = 0;
+        
+        // Create basic strategy details
+        let details = new StrategyDetails()
+          .setGamePhase(this.game.turnManager.gamePhase)
+          .setTurn(this.game.turnManager.currentTurn)
+          .setCurrentPlayer(this.game.currentPlayer)
+          .build();
+        
+        // Try to place all remaining pieces
+        const result = this.game.executeStrategy("autoplaceAllMapPieces", details);
+        
+        // Show feedback based on result
+        if (result.success) {
+          this.showFeedback(`Successfully placed ${result.placedCount} pieces`, "success");
+        } else {
+          if (result.placedCount > 0) {
+            this.showFeedback(`Placed ${result.placedCount} pieces, ${result.failedCount} couldn't be placed`, "info");
+          } else {
+            this.showFeedback("Could not place any pieces", "error");
+          }
+        }
+        
+        return result.success;
+      } catch (error) {
+        console.error("Error in autoplace all:", error);
+        this.showFeedback("Error during placement", "error");
+        return false;
+      }
+    }
+    return false;
   }
 
   // Handle mouseover event
@@ -474,13 +606,93 @@ export class EventListener {
       .setGamePhase(this.game.turnManager.gamePhase)
       .setTurn(this.game.turnManager.currentTurn)
       .setCurrentPlayer(this.game.currentPlayer)
-      .build();
-
-    // Execute the placeMapPiece or placeStone strategy based on the game phase
+      .build();    // Execute the placeMapPiece or placeStone strategy based on the game phase
     if (this.game.turnManager.gamePhase === MAP_PHASE) {
       this.game.executeStrategy("placeMapPiece", details);
     } else if (this.game.turnManager.gamePhase === STONE_PHASE) {
       this.game.executeStrategy("placeStone", details);
+    }
+    
+    // NEW: Update button state after click action
+    this.updateAutoplaceButtonState();
+  }
+  
+  /**
+   * Shows a temporary feedback message to the user.
+   * @param {string} message - The message to display
+   * @param {string} type - The type of message (success/error)
+   * @param {number} duration - How long to show the message in ms
+   */
+  showFeedback(message, type = "info", duration = 3000) {
+    // Remove any existing feedback
+    const existingFeedback = document.querySelector('.autoplace-feedback');
+    if (existingFeedback) {
+      document.body.removeChild(existingFeedback);
+    }
+    
+    // Create and add feedback element
+    const feedback = document.createElement('div');
+    feedback.className = `autoplace-feedback ${type}`;
+    feedback.textContent = message;
+    document.body.appendChild(feedback);
+    
+    // Remove after duration
+    setTimeout(() => {
+      feedback.classList.add('fade');
+      setTimeout(() => {
+        if (feedback.parentNode) {
+          document.body.removeChild(feedback);
+        }
+      }, 300);
+    }, duration);
+  }
+    /**
+   * Updates the enabled/disabled state of the autoplace button
+   * based on current game state.
+   */
+  updateAutoplaceButtonState() {
+    if (!this.autoplaceButton) return;
+    
+    // Disable in Stone phase, enable in Map phase
+    const isMapPhase = this.game.turnManager.gamePhase === MAP_PHASE;
+    
+    // Check if we're still within available map pieces
+    const hasMapPiecesLeft = this.game.currentMapPieceIndex < this.game.gameBoard.getAllMapPieces().length;
+    
+    // Enable only if in map phase and pieces remain
+    this.autoplaceButton.disabled = !isMapPhase || !hasMapPiecesLeft;
+    
+    // Update visual state
+    if (this.autoplaceButton.disabled) {
+      this.autoplaceButton.classList.add("disabled");
+    } else {
+      this.autoplaceButton.classList.remove("disabled");
+    }
+  }
+  
+  /**
+   * Updates the enabled/disabled state of the autoplace-all button
+   * based on current game state.
+   */
+  updateAutoplaceAllButtonState() {
+    if (!this.autoplaceAllButton) return;
+    
+    // Disable in Stone phase, enable in Map phase
+    const isMapPhase = this.game.turnManager.gamePhase === MAP_PHASE;
+    
+    // Check if we have at least two pieces left (otherwise just use regular autoplace)
+    const currentIndex = this.game.currentMapPieceIndex;
+    const totalPieces = this.game.gameBoard.getAllMapPieces().length;
+    const hasMultiplePiecesLeft = currentIndex < totalPieces - 1;
+    
+    // Enable only if in map phase and multiple pieces remain
+    this.autoplaceAllButton.disabled = !isMapPhase || !hasMultiplePiecesLeft;
+    
+    // Update visual state
+    if (this.autoplaceAllButton.disabled) {
+      this.autoplaceAllButton.classList.add("disabled");
+    } else {
+      this.autoplaceAllButton.classList.remove("disabled");
     }
   }
 }

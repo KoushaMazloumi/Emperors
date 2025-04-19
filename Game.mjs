@@ -150,13 +150,18 @@ export class Game {
         // Set the game renderer strategy to render the move preview
         this.gameRenderer.setStrategy(this.movePreviewRendererStrategy);
         this.gameRenderer.performStrategy(details);
-        break;
-      case "rotate":
+        break;      case "rotate":
         this.moveValidator.setStrategy(this.validateMapPieceRotationStrategy);
         if (this.moveValidator.performStrategy(details)) {
           this.gameBoard.replaceMapPiece(this.mapPieceRotator.rotate(details));
         }
         break;
+        case "autoplaceMapPiece":
+        return this._autoplaceMapPiece(details);
+        
+      case "autoplaceAllMapPieces":
+        return this._autoplaceAllMapPieces(details);
+        
       default:
         // Throw an error if the action is unknown
         throw new Error(`Unknown action: ${action}`);
@@ -247,6 +252,291 @@ export class Game {
         setTimeout(() => cell.classList.remove('removed-peninsula'), 3000);
       }
     });
+  }
+  /**
+   * Attempts to automatically place the current map piece at a valid position.
+   * Tries different positions and rotations until a valid placement is found.
+   * 
+   * @param {StrategyDetails} details - Strategy details with game state
+   * @returns {boolean} True if placement was successful, false otherwise
+   * @private
+   */
+  _autoplaceMapPiece(details) {
+    console.log(`Attempting to autoplace piece #${this.currentMapPieceIndex}`);
+    
+    // Get the current map piece
+    const piece = this.gameBoard.getSingleMapPiece(this.currentMapPieceIndex);
+    details.setPiece(piece);
+    
+    // Store original piece shape for potential restore if needed
+    const originalShape = JSON.parse(JSON.stringify(piece.shape));
+    const originalRelativeSquareLocations = JSON.parse(JSON.stringify(piece.shapeRelativeSquareLocations));
+    
+    // Determine search positions in priority order
+    const searchPositions = this._generateOptimizedSearchPositions();
+    let success = false;
+    
+    try {
+      // Try each rotation (0°, 90°, 180°, 270°) until a valid position is found
+      for (let rotation = 0; rotation < 4; rotation++) {
+        if (rotation > 0) {
+          // Apply rotation using existing rotator
+          const rotateDetails = new StrategyDetails()
+            .setPiece(piece)
+            .setGamePhase(details.gamePhase)
+            .setCurrentMapPieceIndex(this.currentMapPieceIndex)
+            .build();
+            
+          this.mapPieceRotator.rotate(rotateDetails);
+          console.log(`Trying rotation ${rotation * 90}°`);
+        }
+        
+        // Try each position with current rotation
+        for (const pos of searchPositions) {
+          const testDetails = new StrategyDetails()
+            .setPiece(piece)
+            .setX(pos.x)
+            .setY(pos.y)
+            .setCurrentMapPieceIndex(this.currentMapPieceIndex)
+            .setGamePhase(details.gamePhase)
+            .build();
+          
+          this.moveValidator.setStrategy(this.validateMapPiecePlacementStrategy);
+          if (this.moveValidator.performStrategy(testDetails)) {
+            console.log(`Found valid position at (${pos.x}, ${pos.y}), rotation: ${rotation * 90}°`);
+            
+            // Create a complete mock cell element
+            const mockCellElement = this._createMockCellElement(pos.y, pos.x);
+            
+            // Update details for placement
+            details.setX(pos.x)
+                   .setY(pos.y)
+                   .setCellElement(mockCellElement);
+            
+            // Execute the normal placement flow
+            this.gameBoardEditor.setStrategy(this.addMapPieceStrategy);
+            this.gameBoardEditor.performStrategy(details);
+            this.turnManager.changeTurn(details);
+            this.turnManager.checkPhase(details);
+            this.renderRoutine(details);
+            
+            success = true;
+            break;
+          }
+        }
+        
+        if (success) break;
+      }
+      
+      // If no valid placement found after all rotations, restore original shape
+      if (!success) {
+        piece.shape = originalShape;
+        piece.shapeRelativeSquareLocations = originalRelativeSquareLocations;
+        console.log("No valid placement found after trying all rotations");
+      }
+      
+      return success;
+    } catch (error) {
+      // Error recovery - restore original piece shape
+      piece.shape = originalShape;
+      piece.shapeRelativeSquareLocations = originalRelativeSquareLocations;      console.error("Error during autoplace:", error);
+      return false;
+    }
+  }
+  
+  /**
+   * Attempts to automatically place all remaining map pieces.
+   * Continues placing pieces until all are placed or until placement fails.
+   * 
+   * @param {StrategyDetails} details - Strategy details with game state
+   * @returns {Object} Results object with success status and counts
+   * @private
+   */
+  _autoplaceAllMapPieces(details) {
+    console.log("Attempting to autoplace all remaining pieces");
+    
+    const startIndex = this.currentMapPieceIndex;
+    const totalPieces = this.gameBoard.getAllMapPieces().length;
+    let placedCount = 0;
+    let failedCount = 0;
+    
+    try {
+      // Keep track of the initial player so we can show appropriate feedback
+      const initialPlayer = this.currentPlayer;
+      const initialPhase = this.turnManager.gamePhase;
+      
+      // Add a slight delay between placements to allow visual updates
+      const attemptNextPiece = () => {
+        // Check if we've switched to stone phase or placed all pieces
+        if (this.turnManager.gamePhase !== initialPhase || 
+            this.currentMapPieceIndex >= totalPieces) {
+          return false;
+        }
+        
+        // Create fresh details for current piece
+        const piece = this.gameBoard.getSingleMapPiece(this.currentMapPieceIndex);
+        const placementDetails = new StrategyDetails()
+          .setPiece(piece)
+          .setCurrentMapPieceIndex(this.currentMapPieceIndex)
+          .setGamePhase(this.turnManager.gamePhase)
+          .setTurn(this.turnManager.currentTurn)
+          .setCurrentPlayer(this.currentPlayer)
+          .build();
+          
+        // Try to place the current piece
+        const placementSuccess = this._autoplaceMapPiece(placementDetails);
+        
+        if (placementSuccess) {
+          placedCount++;
+        } else {
+          failedCount++;
+          return false; // Stop if we can't place a piece
+        }
+        
+        return true;
+      };
+      
+      // Attempt to place all pieces
+      while (this.currentMapPieceIndex < totalPieces) {
+        if (!attemptNextPiece()) {
+          break;
+        }
+      }
+      
+      console.log(`Auto-placed ${placedCount} pieces, failed to place ${failedCount} pieces`);
+      
+      return {
+        success: failedCount === 0 && placedCount > 0,
+        placedCount,
+        failedCount
+      };
+    } catch (error) {
+      console.error("Error during autoplace all:", error);
+      return {
+        success: false,
+        placedCount,
+        failedCount: totalPieces - startIndex - placedCount
+      };
+    }
+  }
+  
+  /**
+   * Generates an optimized list of positions to try for piece placement,
+   * prioritizing positions likely to result in valid placements.
+   * 
+   * @returns {Array<{x: number, y: number}>} Array of positions to try
+   * @private
+   */
+  _generateOptimizedSearchPositions() {
+    const grid = this.gameBoard.getGrid();
+    const positions = [];
+    
+    // For the first piece, prioritize center and nearby positions
+    if (this.currentMapPieceIndex === 0) {
+      const centerX = Math.floor(GRID_SIZE / 2);
+      const centerY = Math.floor(GRID_SIZE / 2);
+      
+      // Start with center and work outward in a spiral pattern
+      for (let radius = 0; radius < Math.ceil(GRID_SIZE / 2); radius++) {
+        for (let y = Math.max(0, centerY - radius); y <= Math.min(GRID_SIZE - 1, centerY + radius); y++) {
+          for (let x = Math.max(0, centerX - radius); x <= Math.min(GRID_SIZE - 1, centerX + radius); x++) {
+            // Only add positions at exactly the current radius away from center
+            if (Math.max(Math.abs(x - centerX), Math.abs(y - centerY)) === radius) {
+              positions.push({ x, y });
+            }
+          }
+        }
+      }
+    }
+    // For subsequent pieces, prioritize positions adjacent to existing pieces
+    else {
+      const adjacentPositions = new Set(); // Use Set to avoid duplicates
+      const allPositions = [];
+      
+      // First collect all cells adjacent to existing map pieces
+      for (let y = 0; y < GRID_SIZE; y++) {
+        for (let x = 0; x < GRID_SIZE; x++) {
+          if (grid[y][x] !== null && grid[y][x].type === "mapPiece") {
+            // Check all 4 adjacent directions
+            const adjDirections = [
+              { dx: -1, dy: 0 }, // Left
+              { dx: 1, dy: 0 },  // Right
+              { dx: 0, dy: -1 }, // Up
+              { dx: 0, dy: 1 }   // Down
+            ];
+            
+            for (const dir of adjDirections) {
+              const adjX = x + dir.dx;
+              const adjY = y + dir.dy;
+              
+              // Only add if within bounds and empty
+              if (adjX >= 0 && adjX < GRID_SIZE && adjY >= 0 && adjY < GRID_SIZE && 
+                  grid[adjY][adjX] === null) {
+                const posKey = `${adjX},${adjY}`;
+                if (!adjacentPositions.has(posKey)) {
+                  adjacentPositions.add(posKey);
+                  positions.push({ x: adjX, y: adjY });
+                }
+              }
+            }
+          }
+          
+          // Also collect all empty positions for fallback
+          if (grid[y][x] === null) {
+            allPositions.push({ x, y });
+          }
+        }
+      }
+      
+      // If no adjacent positions found or as fallback, try all empty positions
+      if (positions.length === 0) {
+        return allPositions;
+      }
+    }
+    
+    return positions;
+  }
+  
+  /**
+   * Creates a mock cell element that satisfies all properties and methods
+   * expected by the existing strategies.
+   * 
+   * @param {number} row - The row coordinate
+   * @param {number} col - The column coordinate
+   * @returns {Object} Mock cell element
+   * @private
+   */
+  _createMockCellElement(row, col) {
+    return {
+      // Dataset for coordinate extraction
+      dataset: {
+        row: row,
+        col: col
+      },
+      
+      // Class manipulation for visual effects
+      classList: {
+        add: function(className) {},
+        remove: function(className) {},
+        contains: function(className) { return false; }
+      },
+      
+      // DOM structure for stone previews
+      stonePreviewActive: false,
+      
+      // DOM query methods
+      querySelector: function(selector) { return null; },
+      
+      // DOM mutation methods
+      appendChild: function(child) {},
+      removeChild: function(child) {},
+      
+      // Attributes and styles for visual effects
+      style: {},
+      
+      // Additional properties that might be set
+      closest: function(selector) { return this; }
+    };
   }
 
   initialize() {

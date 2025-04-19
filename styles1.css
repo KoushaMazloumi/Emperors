@@ -1,3 +1,4 @@
+/* filepath: e:\Emperors\Emperors\styles1.css */
 body {
   display: flex;
   justify-content: space-around;
@@ -219,4 +220,69 @@ th[colspan="2"] {
   background: rgba(255, 0, 0, 0.4);
   border-radius: 50%;
   animation: red-ripple 1s ease-out 3;
+}
+
+/* Auto-place button states */
+#autoplace-button, #autoplace-all-button {
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s, opacity 0.3s;
+}
+
+#autoplace-button {
+  background-color: #4CAF50;
+}
+
+#autoplace-all-button {
+  background-color: #3F51B5;
+}
+
+#autoplace-button:hover {
+  background-color: #45a049;
+}
+
+#autoplace-all-button:hover {
+  background-color: #303F9F;
+}
+
+#autoplace-button.disabled, #autoplace-all-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #cccccc;
+}
+
+/* Feedback tooltip for auto-place results */
+.autoplace-feedback {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 4px;
+  font-size: 14px;
+  z-index: 1000;
+  opacity: 1;
+  transition: opacity 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.autoplace-feedback.success {
+  background-color: rgba(76, 175, 80, 0.75);
+}
+
+.autoplace-feedback.error {
+  background-color: rgba(244, 67, 54, 0.75);
+}
+
+.autoplace-feedback.fade {
+  opacity: 0;
 }
