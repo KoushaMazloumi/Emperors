@@ -223,13 +223,13 @@ export class ScoreTracker {
       }
     }
     
-    // Add city points (1 point per city)
+    // Add city points (2 points per city) // Updated comment
     if (cityState) {
       if (cityState[PLAYER_1]) {
-        this.scores[PLAYER_1] += cityState[PLAYER_1].count;
+        this.scores[PLAYER_1] += cityState[PLAYER_1].count * 2; // Changed 1 to 2
       }
       if (cityState[PLAYER_2]) {
-        this.scores[PLAYER_2] += cityState[PLAYER_2].count;
+        this.scores[PLAYER_2] += cityState[PLAYER_2].count * 2; // Changed 1 to 2
       }
     }
     
