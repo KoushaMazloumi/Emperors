@@ -344,31 +344,22 @@ export class Game {
         }
       }
     } else {
-      // Priority to cells adjacent to existing pieces
+      // Priority to cells adjacent to existing pieces (ONLY 4 cardinal directions)
       const adjacentPositions = [];
       const otherPositions = [];
 
       for (let y = 0; y < GRID_SIZE; y++) {
         for (let x = 0; x < GRID_SIZE; x++) {
           if (grid[y][x] === null) {
+            // Check only cardinal directions (not diagonals) for adjacency
             let isAdjacent = false;
-            for (let dy = -1; dy <= 1; dy++) {
-              for (let dx = -1; dx <= 1; dx++) {
-                const checkY = y + dy;
-                const checkX = x + dx;
-                if (
-                  checkX >= 0 &&
-                  checkX < GRID_SIZE &&
-                  checkY >= 0 &&
-                  checkY < GRID_SIZE &&
-                  grid[checkY][checkX] !== null &&
-                  grid[checkY][checkX].type === "mapPiece"
-                ) {
-                  isAdjacent = true;
-                  break;
-                }
-              }
-              if (isAdjacent) break;
+            if (
+              (y > 0 && grid[y - 1][x] !== null && grid[y - 1][x].type === "mapPiece") ||
+              (y < GRID_SIZE - 1 && grid[y + 1][x] !== null && grid[y + 1][x].type === "mapPiece") ||
+              (x > 0 && grid[y][x - 1] !== null && grid[y][x - 1].type === "mapPiece") ||
+              (x < GRID_SIZE - 1 && grid[y][x + 1] !== null && grid[y][x + 1].type === "mapPiece")
+            ) {
+              isAdjacent = true;
             }
 
             if (isAdjacent) {

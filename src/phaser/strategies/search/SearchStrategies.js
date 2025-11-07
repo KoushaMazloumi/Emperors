@@ -282,18 +282,13 @@ export class ResourceCounter {
             this.grid[i][j + 1]
           ];
 
-          let p1Adjacent = false;
-          let p2Adjacent = false;
-
+          // Match original behavior: count each adjacent stone separately
+          // (can result in multiple points per resource if multiple stones adjacent)
           adjacentCells.forEach((adjacentCell) => {
-            if (adjacentCell !== null && adjacentCell.type === "mapPiece") {
-              if (adjacentCell.stoneOwner === PLAYER_1 && !p1Adjacent) {
-                resourceCount[PLAYER_1].count++;
-                p1Adjacent = true;
-              } else if (adjacentCell.stoneOwner === PLAYER_2 && !p2Adjacent) {
-                resourceCount[PLAYER_2].count++;
-                p2Adjacent = true;
-              }
+            if (adjacentCell !== null && adjacentCell.stoneOwner === PLAYER_1) {
+              resourceCount[PLAYER_1].count++;
+            } else if (adjacentCell !== null && adjacentCell.stoneOwner === PLAYER_2) {
+              resourceCount[PLAYER_2].count++;
             }
           });
         }

@@ -156,6 +156,38 @@ export class HUDRenderer {
       'Auto Place All (Shift+A)',
       () => this.scene.autoPlaceAll()
     );
+
+    // Store buttons for state management
+    this.buttons = {
+      rotate: this.rotateButton,
+      autoPlace: this.autoPlaceButton,
+      autoPlaceAll: this.autoPlaceAllButton
+    };
+  }
+
+  updateButtonStates(phase) {
+    // Enable/disable buttons based on game phase
+    const isMapPhase = phase === 'map';
+
+    // Rotate button only works in map phase
+    if (this.rotateButton) {
+      this.rotateButton.rect.setFillStyle(isMapPhase ? 0x333333 : 0x222222);
+      this.rotateButton.rect.setAlpha(isMapPhase ? 1 : 0.5);
+      this.rotateButton.text.setAlpha(isMapPhase ? 1 : 0.5);
+    }
+
+    // Auto-place buttons only work in map phase
+    if (this.autoPlaceButton) {
+      this.autoPlaceButton.rect.setFillStyle(isMapPhase ? 0x333333 : 0x222222);
+      this.autoPlaceButton.rect.setAlpha(isMapPhase ? 1 : 0.5);
+      this.autoPlaceButton.text.setAlpha(isMapPhase ? 1 : 0.5);
+    }
+
+    if (this.autoPlaceAllButton) {
+      this.autoPlaceAllButton.rect.setFillStyle(isMapPhase ? 0x333333 : 0x222222);
+      this.autoPlaceAllButton.rect.setAlpha(isMapPhase ? 1 : 0.5);
+      this.autoPlaceAllButton.text.setAlpha(isMapPhase ? 1 : 0.5);
+    }
   }
 
   createButton(x, y, width, height, text, callback) {

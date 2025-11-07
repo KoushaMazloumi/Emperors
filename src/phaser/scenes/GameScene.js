@@ -171,6 +171,7 @@ export default class GameScene extends Phaser.Scene {
 
   rotatePiece() {
     if (this.game.turnManager.gamePhase !== MAP_PHASE) {
+      this.hudRenderer.showFeedback("Rotate only works in map phase");
       return;
     }
 
@@ -300,6 +301,9 @@ export default class GameScene extends Phaser.Scene {
       this.game.turnManager.gamePhase,
       this.game.currentPlayer
     );
+
+    // Update button states based on phase
+    this.hudRenderer.updateButtonStates(this.game.turnManager.gamePhase);
 
     // Get all game state details for HUD
     const details = new StrategyDetails()

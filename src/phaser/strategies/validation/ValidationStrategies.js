@@ -102,34 +102,16 @@ export class ValidateMapPiecePlacementStrategy {
             const boardY = y + i;
             const boardX = x + j;
 
-            // Check all adjacent cells (including diagonals)
-            const adjacentCells = [
-              { dx: -1, dy: 0 },
-              { dx: 1, dy: 0 },
-              { dx: 0, dy: -1 },
-              { dx: 0, dy: 1 },
-              { dx: -1, dy: -1 },
-              { dx: 1, dy: -1 },
-              { dx: -1, dy: 1 },
-              { dx: 1, dy: 1 },
-            ];
-
-            for (const { dx, dy } of adjacentCells) {
-              const checkY = boardY + dy;
-              const checkX = boardX + dx;
-              if (
-                checkX >= 0 &&
-                checkX < GRID_SIZE &&
-                checkY >= 0 &&
-                checkY < GRID_SIZE &&
-                grid[checkY][checkX] !== null &&
-                grid[checkY][checkX].type === "mapPiece"
-              ) {
-                isAdjacentToExistingPiece = true;
-                break;
-              }
+            // Check adjacent cells (ONLY 4 cardinal directions, not diagonals)
+            if (
+              (boardY > 0 && grid[boardY - 1][boardX]?.type === "mapPiece") ||
+              (boardY < GRID_SIZE - 1 && grid[boardY + 1][boardX]?.type === "mapPiece") ||
+              (boardX > 0 && grid[boardY][boardX - 1]?.type === "mapPiece") ||
+              (boardX < GRID_SIZE - 1 && grid[boardY][boardX + 1]?.type === "mapPiece")
+            ) {
+              isAdjacentToExistingPiece = true;
+              break;
             }
-            if (isAdjacentToExistingPiece) break;
           }
         }
         if (isAdjacentToExistingPiece) break;
