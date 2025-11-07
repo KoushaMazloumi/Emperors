@@ -85,7 +85,7 @@ export class AddMapPieceStrategy extends BaseUpdateStrategy {
 
             this.gridCOPY[boardY][boardX] = {
               type: "mapPiece",
-              lastPlayed: true,
+              lastPlayed: false,  // Match original: map pieces not highlighted on placement
               isPartOfTradeRoute: false,
               isPartOfCity: false,
               color: this.piece.color,
@@ -99,8 +99,7 @@ export class AddMapPieceStrategy extends BaseUpdateStrategy {
 
             this.piece.boardRelativeSquareLocations[squareIndex] = {
               x: boardX,
-              y: boardY,
-              index: squareIndex
+              y: boardY  // Match original: no index property
             };
           }
         }
