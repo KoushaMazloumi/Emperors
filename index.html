@@ -1,175 +1,217 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>My Game</title>
-    <!-- <script src="game.js"></script>-->
-        <script type="module" src="main.mjs"></script>
-    <link rel="stylesheet" href="./styles1.css">
-  </head>
-  <body>
-    <div id="top-section">
-      <div id="sidebar">
-        <div id="status-div">
-          <table>
-            <tr>
-              <th>Game Phase</th>
-              <td id="game-phase"></td>
-            </tr>
-            <tr>
-              <th>Turn Count</th>
-              <td id="turn-indicator"></td>
-            </tr>
-            <tr>
-              <th>Current Player</th>
-              <td id="current-player"></td>
-            </tr>
-            <tr>
-              <th colspan="2">White</th>
-            </tr>
-            <tr>
-              <th>Score</th>
-              <td id="player1-score"></td>
-            </tr>
-            <tr>
-              <th>Emperors</th>
-              <td id="player1-emperor"></td>
-            </tr>
-            <tr>
-              <th>Trade Routes</th>
-              <td id="player1-trade-routes"></td>
-            </tr>
-            <tr>
-              <th>Cities</th>
-              <td id="player1-cities"></td>
-            </tr>
-            <tr>
-              <th>Population</th>
-              <td id="player1-population"></td>
-            </tr>
-            <tr>
-              <th>Resources</th>
-              <td id="player1-resources"></td>
-            </tr>
-            <tr>
-              <th colspan="2">Black</th>
-            </tr>
-            <tr>
-              <th>Score</th>
-              <td id="player2-score"></td>
-            </tr>
-            <tr>
-              <th>Emperors</th>
-              <td id="player2-emperor"></td>
-            </tr>
-            <tr>
-              <th>Trade Routes</th>
-              <td id="player2-trade-routes"></td>
-            </tr>
-            <tr>
-              <th>Cities</th>
-              <td id="player2-cities"></td>
-            </tr>
-            <tr>
-              <th>Population</th>
-              <td id="player2-population"></td>
-            </tr>
-            <tr>
-              <th>Resources</th>
-              <td id="player2-resources"></td>
-            </tr>
-          </table>
-        </div>
-      </div>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emperors - Strategic Territory Control Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-      <div id="main">
-        <div id="game-board"></div>
-      </div>
-    </div>
-    <div id="game-controls">
-      <ul>
-        <li>
-          <button id="undo-button">Undo</button>
-        </li>        <li>
-          <button id="rotate-button">Rotate</button>
-        </li>        <li>
-          <button id="autoplace-button" title="Automatically place the current map piece">Auto Place</button>
-        </li>
-        <li>
-          <button id="autoplace-all-button" title="Automatically place all remaining map pieces">Auto Place All</button>
-        </li>
-        <li>
-          <input type="checkbox" id="checkTradeRoutes" name="checkTradeRoutes" value="true" checked>
-          <label for="checkTradeRoutes">Include Trade Routes?</label>
-        </li>
-        <li>
-          <input type="checkbox" id="checkCities" name="checkCities" value="true" checked>
-          <label for="checkCities">Include Cities?</label>
-        </li>
-        <li>
-          <input type="checkbox" id="checkGlobalWarming" name="checkGlobalWarming" value="true" checked>
-          <label for="checkGlobalWarming">Include Global Warming?</label>
-        </li>
-      </ul>
-    </div>
-    </div>
-    <div id="theRules">
-      <h2>The Objective</h2>
-      <p>
-        <em>Emperors</em> is played on a 2D grid with map pieces and stones. There are two distinct phases of the game:
-      <ul>
-        <li>The <strong>map phase</strong> is the phase in which the players take turns building the map that the game will be played on.
-        <li>The <strong>stone phase</strong> is the phase in which the players take turns placing stones on the map that they built during the map phase. </li>
-      </ul> Your objective is to <strong>establish and empire</strong>, while building the <strong>strongest trade route</strong> on the map. You will also receive bonus points for <strong>establishing cities</strong> and controlling larger populations. </p>
-      <h2>The Map Phase</h2>
-      <p> Players place 10 map pieces, which are distinct with different colors, shapes, and sizes. The placement of the pieces will follow these rules:
-      <ul>
-        <li>Map pieces can be any continuous shape or length of 3-7 squares.</li>
-        <li>The first 4 map pieces which the game generates are always 5 squares in length.</li>
-        <li>Each map piece must be placed on an empty square on the board. Map pieces cannot overlap.</li>
-        <li>The first map piece of the game can be placed anywhere within the bounds of the board. </li>
-        <li>Subsequent map pieces must be placed with at least one of their squarse adjacent to an existing square of the map.</li>
-      </ul>
-      </p>
-      <h2>The Stone Phase</h2>
-      <p>During the stone phase, players place stones on the map pieces created in the previous phase. Stones are marked as white or black to represent each player. This phase ctoninues until a stone occupies every square on the map. The placement of the stones will follow these rules:
-      <ul>
-        <li>Stones can only be placed on empty squares, not already occupied ones.</li>
-        <li>The first stone can be placed anywhere on the map pieces.</li>
-        <li>Subsequent stones must be placed adjacent to at least one other stone, regardless of the owner.</li>
-        <li>Players will continue placing stones until every map piece square is occupied.</li>
-      </ul>
-      </p>
-      <h2>Scoring</h2>
-      <p>Players earn points based on the following criteria:</p>
-      <p>
-        <strong>Emperor Points:</strong>
-      </p>
-      <ul>
-        <li>The player with more stones on a map piece becomes the emperor of that piece.</li>
-        <li>Each emperor is worth 1 point.</li>
-        <li>The number of squares in the ruled map piece provides an additional 1 point per square population bonus.</li>
-      </ul>
-      <p>
-        <strong>Trade Route Points:</strong>
-      </p>
-      <ul>
-        <li>Trade routes are established by placing two stones on either side of a gap.</li>
-        <li>Players earn 1 point per trade route.</li>
-        <li>Gaps between trade ports (empty non-map sapces) count for 1 additional point each.</li>
-        <li>Trade routes are counted horizontally and vertically.</li>
-      </ul>
-      <p>
-        <strong>City Points:</strong>
-      </p>
-      <ul>
-        <li>Cities consist of 3 or more stones of the same player in a vertical or horizontal line.</li>
-        <li>Players earn 1 point by establishing a city</li>
-        <li>The number of stones in the line does not affect the score; each city is worth 1 point.</li>
-      </ul>
-      <p>The player with the highest score when the map is fully occupied wins the game!</p>
-    </div>
-    
-    </div>
-  </body>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #0a0a0a;
+      color: #ffffff;
+      overflow: hidden;
+    }
+
+    #game-container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #rules-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #333;
+      color: #fff;
+      border: 2px solid #666;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 5px;
+      z-index: 1000;
+    }
+
+    #rules-toggle:hover {
+      background-color: #555;
+    }
+
+    #rules-panel {
+      position: fixed;
+      top: 0;
+      right: -600px;
+      width: 600px;
+      height: 100vh;
+      background-color: #1a1a1a;
+      border-left: 2px solid #333;
+      overflow-y: auto;
+      padding: 30px;
+      transition: right 0.3s ease;
+      z-index: 999;
+    }
+
+    #rules-panel.open {
+      right: 0;
+    }
+
+    #rules-panel h2 {
+      color: #ffaa00;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+
+    #rules-panel h2:first-child {
+      margin-top: 0;
+    }
+
+    #rules-panel p {
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    #rules-panel ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    #rules-panel li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    #rules-panel strong {
+      color: #ffaa00;
+    }
+
+    #close-rules {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #ff4444;
+      color: #fff;
+      border: none;
+      padding: 8px 15px;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 3px;
+    }
+
+    #close-rules:hover {
+      background-color: #ff6666;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container"></div>
+
+  <button id="rules-toggle">Rules</button>
+
+  <div id="rules-panel">
+    <button id="close-rules">×</button>
+
+    <h2>The Objective</h2>
+    <p>
+      <em>Emperors</em> is played on a 2D grid with map pieces and stones. There are two distinct phases of the game:
+    </p>
+    <ul>
+      <li>The <strong>map phase</strong> is the phase in which the players take turns building the map that the game will be played on.</li>
+      <li>The <strong>stone phase</strong> is the phase in which the players take turns placing stones on the map that they built during the map phase.</li>
+    </ul>
+    <p>
+      Your objective is to <strong>establish an empire</strong>, while building the <strong>strongest trade routes</strong> on the map. You will also receive bonus points for <strong>establishing cities</strong> and controlling larger populations.
+    </p>
+
+    <h2>The Map Phase</h2>
+    <p>
+      Players place 10 map pieces, which are distinct with different colors, shapes, and sizes. The placement of the pieces will follow these rules:
+    </p>
+    <ul>
+      <li>Map pieces can be any continuous shape or length of 3-7 squares.</li>
+      <li>The first 4 map pieces which the game generates are always 5 squares in length.</li>
+      <li>Each map piece must be placed on an empty square on the board. Map pieces cannot overlap.</li>
+      <li>The first map piece of the game can be placed anywhere within the bounds of the board.</li>
+      <li>Subsequent map pieces must be placed with at least one of their squares adjacent to an existing square of the map.</li>
+      <li>Press <strong>R</strong> to rotate the current piece.</li>
+      <li>Press <strong>A</strong> to auto-place the current piece.</li>
+      <li>Press <strong>Shift+A</strong> to auto-place all remaining pieces.</li>
+    </ul>
+
+    <h2>The Stone Phase</h2>
+    <p>
+      During the stone phase, players place stones on the map pieces created in the previous phase. Stones are marked as white or black to represent each player. This phase continues until a stone occupies every square on the map. The placement of the stones will follow these rules:
+    </p>
+    <ul>
+      <li>Stones can only be placed on empty squares, not already occupied ones.</li>
+      <li>The first two stones (one per player) can be placed anywhere on the map pieces.</li>
+      <li>Subsequent stones must be placed adjacent to at least one other stone, regardless of the owner.</li>
+      <li>Players will continue placing stones until every map piece square is occupied.</li>
+    </ul>
+
+    <h2>Scoring</h2>
+    <p>Players earn points based on the following criteria:</p>
+
+    <p><strong>Emperor Points:</strong></p>
+    <ul>
+      <li>The player with more stones on a map piece becomes the emperor of that piece.</li>
+      <li>Each emperor is worth 1 point.</li>
+      <li>The number of squares in the ruled map piece provides an additional 1 point per square population bonus.</li>
+    </ul>
+
+    <p><strong>Trade Route Points:</strong></p>
+    <ul>
+      <li>Trade routes are established by placing two stones on either side of a gap (ocean).</li>
+      <li>Players earn 1 point per trade route.</li>
+      <li>Gaps between trade ports (empty non-map spaces) count for 1 additional point each.</li>
+      <li>Trade routes are counted horizontally and vertically.</li>
+    </ul>
+
+    <p><strong>City Points:</strong></p>
+    <ul>
+      <li>Cities consist of 3 or more stones of the same player in a vertical or horizontal line.</li>
+      <li>Players earn <strong>2 points</strong> per city.</li>
+      <li>The number of stones in the line does not affect the score; each city is worth 2 points.</li>
+    </ul>
+
+    <p><strong>Resource Points:</strong></p>
+    <ul>
+      <li>Four natural resources are placed randomly on the board at game start (one in each quadrant).</li>
+      <li>Players earn 1 point for each resource adjacent to their stones.</li>
+    </ul>
+
+    <p><strong>Global Warming:</strong></p>
+    <ul>
+      <li>Peninsula tiles (squares with 3 sides touching ocean) may be removed by global warming.</li>
+      <li>The chance increases exponentially with each turn after turn 10.</li>
+      <li>Removed tiles are shown with a red pulse animation.</li>
+      <li>This can dramatically alter the map and scoring!</li>
+    </ul>
+
+    <p>The player with the highest score when the map is fully occupied wins the game!</p>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+
+  <script>
+    // Rules panel toggle
+    const rulesToggle = document.getElementById('rules-toggle');
+    const rulesPanel = document.getElementById('rules-panel');
+    const closeRules = document.getElementById('close-rules');
+
+    rulesToggle.addEventListener('click', () => {
+      rulesPanel.classList.add('open');
+    });
+
+    closeRules.addEventListener('click', () => {
+      rulesPanel.classList.remove('open');
+    });
+  </script>
+</body>
 </html>
