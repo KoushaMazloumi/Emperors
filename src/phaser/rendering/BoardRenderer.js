@@ -28,6 +28,9 @@ export class BoardRenderer {
     // Text objects for symbols
     this.symbolTexts = [];
 
+    // Animation state for last played highlight
+    this.lastPlayedPulse = 0;
+
     this.drawGrid();
   }
 
@@ -61,6 +64,7 @@ export class BoardRenderer {
   renderBoard(grid) {
     this.pieceGraphics.clear();
     this.stoneGraphics.clear();
+    this.highlightGraphics.clear();
     this.clearSymbols();
 
     for (let i = 0; i < grid.length; i++) {
@@ -103,9 +107,10 @@ export class BoardRenderer {
       this.drawSymbols(centerX, centerY, cell);
     }
 
-    // Draw last played indicator
+    // Draw last played indicator with pulsing animation
     if (cell.lastPlayed) {
-      this.highlightGraphics.lineStyle(3, LAST_PLAYED_COLOR, 1);
+      const pulseAlpha = 0.6 + 0.4 * Math.sin(this.lastPlayedPulse);
+      this.highlightGraphics.lineStyle(3, LAST_PLAYED_COLOR, pulseAlpha);
       this.highlightGraphics.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
     }
   }
@@ -190,6 +195,11 @@ export class BoardRenderer {
       text.destroy();
     }
     this.symbolTexts = [];
+  }
+
+  update(delta) {
+    // Update pulse animation for last played highlight
+    this.lastPlayedPulse += delta * 0.003; // Smooth pulse speed
   }
 
   destroy() {

@@ -108,7 +108,23 @@ export class HUDRenderer {
       color: '#ff6666'
     });
 
-    // Buttons
+    // Turn history section
+    this.scene.add.text(this.hudX, this.hudY + 440, 'RECENT MOVES', {
+      fontSize: '16px',
+      fontStyle: 'bold',
+      color: '#ffffff'
+    });
+
+    this.historyTexts = [];
+    for (let i = 0; i < 5; i++) {
+      const historyText = this.scene.add.text(this.hudX, this.hudY + 470 + i * 20, '', {
+        fontSize: '12px',
+        color: '#aaaaaa'
+      });
+      this.historyTexts.push(historyText);
+    }
+
+    // Buttons (moved down to make room for history)
     this.createButtons();
 
     // Feedback message
@@ -123,9 +139,12 @@ export class HUDRenderer {
   }
 
   createButtons() {
-    const buttonY = this.hudY + 450;
+    const buttonY = this.hudY + 580;
     const buttonWidth = 200;
     const buttonHeight = 35;
+
+    // Initialize move history
+    this.moveHistory = [];
 
     // Rotate button
     this.rotateButton = this.createButton(
@@ -157,11 +176,33 @@ export class HUDRenderer {
       () => this.scene.autoPlaceAll()
     );
 
+    // Undo button
+    this.undoButton = this.createButton(
+      this.hudX,
+      buttonY + 145,
+      buttonWidth,
+      buttonHeight,
+      'Undo (Ctrl+Z)',
+      () => this.scene.undoMove()
+    );
+
+    // New Game button
+    this.newGameButton = this.createButton(
+      this.hudX,
+      buttonY + 190,
+      buttonWidth,
+      buttonHeight,
+      'New Game (Ctrl+N)',
+      () => this.scene.newGame()
+    );
+
     // Store buttons for state management
     this.buttons = {
       rotate: this.rotateButton,
       autoPlace: this.autoPlaceButton,
-      autoPlaceAll: this.autoPlaceAllButton
+      autoPlaceAll: this.autoPlaceAllButton,
+      undo: this.undoButton,
+      newGame: this.newGameButton
     };
   }
 
@@ -204,13 +245,39 @@ export class HUDRenderer {
 
     button.on('pointerover', () => {
       button.setFillStyle(0x555555);
+      this.scene.tweens.add({
+        targets: button,
+        scaleX: 1.02,
+        scaleY: 1.02,
+        duration: 100,
+        ease: 'Power2'
+      });
     });
 
     button.on('pointerout', () => {
       button.setFillStyle(0x333333);
+      this.scene.tweens.add({
+        targets: button,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 100,
+        ease: 'Power2'
+      });
     });
 
-    button.on('pointerdown', callback);
+    button.on('pointerdown', () => {
+      // Quick scale down on click for tactile feedback
+      this.scene.tweens.add({
+        targets: button,
+        scaleX: 0.98,
+        scaleY: 0.98,
+        duration: 50,
+        yoyo: true,
+        onComplete: () => {
+          callback();
+        }
+      });
+    });
 
     return { rect: button, text: buttonText };
   }
@@ -265,6 +332,136 @@ export class HUDRenderer {
 
     this.scene.time.delayedCall(duration, () => {
       this.feedbackText.setVisible(false);
+    });
+  }
+
+  addMoveToHistory(turn, player, type, position) {
+    const playerName = player === PLAYER_1 ? 'P1' : 'P2';
+    const moveText = type === 'map'
+      ? `T${turn}: ${playerName} placed map piece`
+      : `T${turn}: ${playerName} placed stone at (${position.x}, ${position.y})`;
+
+    this.moveHistory.push(moveText);
+
+    // Keep only last 5 moves
+    if (this.moveHistory.length > 5) {
+      this.moveHistory.shift();
+    }
+
+    this.updateHistoryDisplay();
+  }
+
+  updateHistoryDisplay() {
+    for (let i = 0; i < this.historyTexts.length; i++) {
+      if (i < this.moveHistory.length) {
+        this.historyTexts[i].setText(this.moveHistory[this.moveHistory.length - 1 - i]);
+        this.historyTexts[i].setAlpha(1 - i * 0.15); // Fade older moves
+      } else {
+        this.historyTexts[i].setText('');
+      }
+    }
+  }
+
+  clearHistory() {
+    this.moveHistory = [];
+    this.updateHistoryDisplay();
+  }
+
+  showGameOver(scores) {
+    const { p1, p2 } = scores;
+    const winner = p1 > p2 ? 'Player 1 (White)' : p2 > p1 ? 'Player 2 (Black)' : 'Tie';
+    const winnerColor = p1 > p2 ? '#ffffff' : p2 > p1 ? '#000000' : '#ffaa00';
+
+    // Create semi-transparent overlay
+    const overlay = this.scene.add.rectangle(
+      this.scene.cameras.main.centerX,
+      this.scene.cameras.main.centerY,
+      this.scene.cameras.main.width,
+      this.scene.cameras.main.height,
+      0x000000,
+      0.8
+    );
+    overlay.setDepth(1000);
+
+    // Game Over text
+    const gameOverText = this.scene.add.text(
+      this.scene.cameras.main.centerX,
+      this.scene.cameras.main.centerY - 120,
+      'GAME OVER',
+      {
+        fontSize: '48px',
+        fontStyle: 'bold',
+        color: '#ffaa00'
+      }
+    );
+    gameOverText.setOrigin(0.5, 0.5);
+    gameOverText.setDepth(1001);
+
+    // Winner text
+    const winnerText = this.scene.add.text(
+      this.scene.cameras.main.centerX,
+      this.scene.cameras.main.centerY - 60,
+      p1 === p2 ? "It's a Tie!" : `${winner} Wins!`,
+      {
+        fontSize: '32px',
+        fontStyle: 'bold',
+        color: winnerColor,
+        stroke: winnerColor === '#000000' ? '#ffffff' : '#000000',
+        strokeThickness: 2
+      }
+    );
+    winnerText.setOrigin(0.5, 0.5);
+    winnerText.setDepth(1001);
+
+    // Final scores
+    const scoresText = this.scene.add.text(
+      this.scene.cameras.main.centerX,
+      this.scene.cameras.main.centerY + 10,
+      `Final Scores:\nPlayer 1: ${p1}\nPlayer 2: ${p2}`,
+      {
+        fontSize: '24px',
+        color: '#ffffff',
+        align: 'center',
+        lineSpacing: 10
+      }
+    );
+    scoresText.setOrigin(0.5, 0.5);
+    scoresText.setDepth(1001);
+
+    // Play Again button
+    const playAgainButton = this.scene.add.rectangle(
+      this.scene.cameras.main.centerX,
+      this.scene.cameras.main.centerY + 100,
+      200,
+      50,
+      0x44aa44
+    );
+    playAgainButton.setInteractive();
+    playAgainButton.setDepth(1001);
+
+    const playAgainText = this.scene.add.text(
+      this.scene.cameras.main.centerX,
+      this.scene.cameras.main.centerY + 100,
+      'Play Again',
+      {
+        fontSize: '20px',
+        color: '#ffffff',
+        fontStyle: 'bold'
+      }
+    );
+    playAgainText.setOrigin(0.5, 0.5);
+    playAgainText.setDepth(1002);
+
+    playAgainButton.on('pointerover', () => {
+      playAgainButton.setFillStyle(0x55bb55);
+    });
+
+    playAgainButton.on('pointerout', () => {
+      playAgainButton.setFillStyle(0x44aa44);
+    });
+
+    playAgainButton.on('pointerdown', () => {
+      this.scene.newGame();
     });
   }
 

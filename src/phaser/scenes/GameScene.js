@@ -45,6 +45,9 @@ export default class GameScene extends Phaser.Scene {
     // Show global warming animations
     this.globalWarmingGraphics = this.add.graphics();
     this.globalWarmingPulses = [];
+
+    // Game state
+    this.gameOver = false;
   }
 
   setupInput() {
@@ -67,6 +70,20 @@ export default class GameScene extends Phaser.Scene {
         this.autoPlaceAll();
       } else {
         this.autoPlace();
+      }
+    });
+
+    // Undo with Ctrl+Z or Cmd+Z
+    this.input.keyboard.on('keydown-Z', (event) => {
+      if (event.ctrlKey || event.metaKey) {
+        this.undoMove();
+      }
+    });
+
+    // New game with Ctrl+N or Cmd+N
+    this.input.keyboard.on('keydown-N', (event) => {
+      if (event.ctrlKey || event.metaKey) {
+        this.newGame();
       }
     });
   }
@@ -123,19 +140,23 @@ export default class GameScene extends Phaser.Scene {
 
   placeMapPiece(x, y) {
     const piece = this.game.gameBoard.getAllMapPieces()[this.game.currentMapPieceIndex];
+    const currentPlayer = this.game.currentPlayer;
+    const currentTurn = this.game.turnManager.currentTurn;
+
     const details = new StrategyDetails()
       .setPiece(piece)
       .setX(x)
       .setY(y)
       .setCurrentMapPieceIndex(this.game.currentMapPieceIndex)
       .setGamePhase(this.game.turnManager.gamePhase)
-      .setCurrentPlayer(this.game.currentPlayer)
-      .setTurn(this.game.turnManager.currentTurn)
+      .setCurrentPlayer(currentPlayer)
+      .setTurn(currentTurn)
       .build();
 
     const success = this.game.executeStrategy("placeMapPiece", details);
 
     if (success) {
+      this.hudRenderer.addMoveToHistory(currentTurn, currentPlayer, 'map', { x, y });
       this.renderGame();
       this.boardRenderer.clearPreview();
     } else {
@@ -144,18 +165,24 @@ export default class GameScene extends Phaser.Scene {
   }
 
   placeStone(x, y) {
+    if (this.gameOver) return;
+
+    const currentPlayer = this.game.currentPlayer;
+    const currentTurn = this.game.turnManager.currentTurn;
+
     const details = new StrategyDetails()
       .setX(x)
       .setY(y)
-      .setCurrentTurn(this.game.turnManager.currentTurn)
+      .setCurrentTurn(currentTurn)
       .setGamePhase(this.game.turnManager.gamePhase)
-      .setCurrentPlayer(this.game.currentPlayer)
-      .setTurn(this.game.turnManager.currentTurn)
+      .setCurrentPlayer(currentPlayer)
+      .setTurn(currentTurn)
       .build();
 
     const success = this.game.executeStrategy("placeStone", details);
 
     if (success) {
+      this.hudRenderer.addMoveToHistory(currentTurn, currentPlayer, 'stone', { x, y });
       this.renderGame();
       this.boardRenderer.clearPreview();
 
@@ -164,9 +191,95 @@ export default class GameScene extends Phaser.Scene {
         this.animateGlobalWarming(this.game.removedPeninsulasForAnimation);
         this.game.removedPeninsulasForAnimation = [];
       }
+
+      // Check for game over
+      this.checkGameOver();
     } else {
       this.hudRenderer.showFeedback("Invalid placement!");
     }
+  }
+
+  checkGameOver() {
+    // Game is over when all map piece squares have stones
+    const grid = this.game.gameBoard.getGrid();
+    let totalMapSquares = 0;
+    let filledSquares = 0;
+
+    for (let i = 0; i < grid.length; i++) {
+      for (let j = 0; j < grid[i].length; j++) {
+        const cell = grid[i][j];
+        if (cell && cell.type === "mapPiece") {
+          totalMapSquares++;
+          if (cell.stoneCount > 0) {
+            filledSquares++;
+          }
+        }
+      }
+    }
+
+    if (totalMapSquares > 0 && filledSquares === totalMapSquares) {
+      this.gameOver = true;
+      const scores = this.game.scoreTracker.getScores();
+      this.hudRenderer.showGameOver(scores);
+    }
+  }
+
+  undoMove() {
+    if (this.gameOver) return;
+
+    const historySize = this.game.gameBoard.historyManager.getHistorySize();
+    if (historySize <= 1) {
+      this.hudRenderer.showFeedback("Nothing to undo");
+      return;
+    }
+
+    // Remove current state
+    this.game.gameBoard.historyManager.undo();
+
+    // Get previous state
+    const previousState = this.game.gameBoard.historyManager.getLastState();
+
+    if (previousState) {
+      // Restore the grid (deep copy)
+      const restoredGrid = JSON.parse(JSON.stringify(previousState));
+
+      // Restore map piece references
+      const mapPieces = this.game.gameBoard.getAllMapPieces();
+      for (let i = 0; i < restoredGrid.length; i++) {
+        for (let j = 0; j < restoredGrid[i].length; j++) {
+          if (restoredGrid[i][j] && restoredGrid[i][j].type === "mapPiece") {
+            const piece = mapPieces.find(p => p.id === restoredGrid[i][j].mapPieceID);
+            if (piece) {
+              restoredGrid[i][j].mapPiece = piece;
+            }
+          }
+        }
+      }
+
+      // Upload restored grid
+      this.game.gameBoard.uploadGrid(restoredGrid);
+
+      // Decrement turn and switch player back
+      this.game.turnManager.currentTurn--;
+      this.game.currentPlayer = this.game.currentPlayer === PLAYER_1 ? PLAYER_2 : PLAYER_1;
+
+      // Check if we need to switch back to map phase
+      if (this.game.turnManager.currentTurn < MAP_PHASE_TURNS_THRESHOLD) {
+        this.game.turnManager.gamePhase = MAP_PHASE;
+        this.game.currentMapPieceIndex = Math.max(0, this.game.currentMapPieceIndex - 1);
+      }
+
+      this.renderGame();
+      this.hudRenderer.showFeedback("Move undone", 1000);
+    }
+  }
+
+  newGame() {
+    // Clear history before restarting
+    this.hudRenderer.clearHistory();
+
+    // Reload the scene to start fresh
+    this.scene.restart();
   }
 
   rotatePiece() {
@@ -268,6 +381,9 @@ export default class GameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    // Update board renderer animations
+    this.boardRenderer.update(delta);
+
     // Update global warming pulse animations
     this.globalWarmingGraphics.clear();
 
