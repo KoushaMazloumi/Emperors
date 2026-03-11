@@ -625,6 +625,114 @@ export class PopulationCounter {
     return ruledPopulations;
   }
 }
+
+export class FishingVillageFinder {
+  constructor() {
+    this.grid = null;
+  }
+
+  performStrategy(boardStateSearcher) {
+    this.grid = boardStateSearcher.grid;
+    return this.findFishingVillages();
+  }
+
+  findFishingVillages() {
+    const visited = Array.from({ length: GRID_SIZE }, () =>
+      Array(GRID_SIZE).fill(false)
+    );
+
+    const result = {
+      [PLAYER_1]: { count: 0, totalShoreline: 0, lakeCells: [], shorelineCoordinates: [] },
+      [PLAYER_2]: { count: 0, totalShoreline: 0, lakeCells: [], shorelineCoordinates: [] },
+    };
+
+    for (let i = 0; i < GRID_SIZE; i++) {
+      for (let j = 0; j < GRID_SIZE; j++) {
+        if (this.grid[i][j] === null && !visited[i][j]) {
+          const component = [];
+          let touchesBoundary = false;
+          const queue = [[i, j]];
+          let head = 0;
+          visited[i][j] = true;
+
+          while (head < queue.length) {
+            const [r, c] = queue[head++];
+            component.push([r, c]);
+
+            if (r === 0 || r === GRID_SIZE - 1 || c === 0 || c === GRID_SIZE - 1) {
+              touchesBoundary = true;
+            }
+
+            const neighbors = [
+              [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]
+            ];
+            for (const [nr, nc] of neighbors) {
+              if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE
+                  && this.grid[nr][nc] === null && !visited[nr][nc]) {
+                visited[nr][nc] = true;
+                queue.push([nr, nc]);
+              }
+            }
+          }
+
+          if (touchesBoundary) continue;
+
+          // Closed lake found — collect shoreline cells
+          const shorelineSet = new Set();
+          for (const [r, c] of component) {
+            const neighbors = [
+              [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]
+            ];
+            for (const [nr, nc] of neighbors) {
+              if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+                const cell = this.grid[nr][nc];
+                if (cell && cell.type === "mapPiece") {
+                  shorelineSet.add(`${nr},${nc}`);
+                }
+              }
+            }
+          }
+
+          // Guard: skip lakes with no mapPiece shoreline (vacuous truth)
+          if (shorelineSet.size === 0) continue;
+
+          // Check if all shoreline cells are controlled by one player
+          let controllingPlayer = null;
+          let allControlled = true;
+          const shorelineCoords = [];
+
+          for (const key of shorelineSet) {
+            const [sr, sc] = key.split(",").map(Number);
+            shorelineCoords.push([sr, sc]);
+            const cell = this.grid[sr][sc];
+
+            if (!cell.stoneOwner) {
+              allControlled = false;
+              break;
+            }
+
+            if (controllingPlayer === null) {
+              controllingPlayer = cell.stoneOwner;
+            } else if (cell.stoneOwner !== controllingPlayer) {
+              allControlled = false;
+              break;
+            }
+          }
+
+          if (allControlled && controllingPlayer !== null) {
+            result[controllingPlayer].count++;
+            result[controllingPlayer].totalShoreline += shorelineSet.size;
+            result[controllingPlayer].lakeCells.push(...component);
+            result[controllingPlayer].shorelineCoordinates.push(...shorelineCoords);
+          }
+        }
+      }
+    }
+
+    return result;
+  }
+}
+
 // ********************Move Validation Classes********************
 //Validates moves as allowed or not
 export class MoveValidator {
@@ -969,6 +1077,34 @@ export class UpdateCityStrategy {
   }
 }
 
+export class UpdateFishingVillageStrategy {
+  constructor() {
+    this.gridCOPY = [];
+  }
+
+  performStrategy(details) {
+    this.gridCOPY = details.currentGridCopyState;
+    const fishingVillageState = details.currentFishingVillageState;
+    if (!fishingVillageState) return;
+
+    const allShorelineCoords = [
+      ...fishingVillageState[PLAYER_1].shorelineCoordinates,
+      ...fishingVillageState[PLAYER_2].shorelineCoordinates,
+    ];
+
+    for (const [r, c] of allShorelineCoords) {
+      const square = this.gridCOPY[r][c];
+      if (square && square.type === "mapPiece") {
+        square.isPartOfFishingVillage = true;
+      }
+    }
+  }
+
+  giveUpdatedGrid() {
+    return this.gridCOPY;
+  }
+}
+
 // ********************Board Injection Update Strategies********************
 export class GlobalWarmingEventHandlingStrategy {
   constructor() {
@@ -1111,6 +1247,7 @@ export class AddStoneStrategy {
           this.gridCOPY[i][j].lastPlayed = false;
           this.gridCOPY[i][j].isPartOfTradeRoute = false; // Reset the trade route flag of the square
           this.gridCOPY[i][j].isPartOfCity = false;
+          this.gridCOPY[i][j].isPartOfFishingVillage = false;
         }
       }
     }
@@ -1190,6 +1327,7 @@ export class AddMapPieceStrategy {
             lastPlayed: false,
             isPartOfTradeRoute: false,
             isPartOfCity: false,
+            isPartOfFishingVillage: false,
             color: this.piece.color,
             mapPiece: this.piece, // Store a reference to the MapPiece
             pieceSquareIndex: squareIndex, // Set id to the index of the square within the map piece

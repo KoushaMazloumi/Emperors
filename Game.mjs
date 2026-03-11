@@ -35,6 +35,8 @@ import {
   ResourceCounter,
   GlobalWarmingEventFinder,
   GlobalWarmingEventHandlingStrategy,
+  FishingVillageFinder,
+  UpdateFishingVillageStrategy,
 } from "./BoardManagement.mjs";
 import { MapPieceGenerator, MapPieceRotator } from "./MapPieces.mjs";
 import {
@@ -92,6 +94,8 @@ export class Game {
     this.globalWarmingEventHandlingStrategy =
       new GlobalWarmingEventHandlingStrategy();
     this.scoreTracker = new ScoreTracker(); // Initialize ScoreTracker
+    this.fishingVillageFinder = new FishingVillageFinder();
+    this.updateFishingVillageStrategy = new UpdateFishingVillageStrategy();
     this.undoStack = [];
   }
 
@@ -147,7 +151,7 @@ export class Game {
       case "renderBoard":
         // Set the game renderer strategy to render the board
         this.gameRenderer.setStrategy(this.boardRendererStrategy);
-        this.gameRenderer.performStrategy();
+        this.gameRenderer.performStrategy(details);
         break;
 
       case "renderMovePreview":
@@ -239,19 +243,28 @@ export class Game {
       this.gameBoardSearcher.performStrategy(details)
     );
 
+    this.gameBoardSearcher.setStrategy(this.fishingVillageFinder);
+    details.setCurrentFishingVillageState(
+      this.gameBoardSearcher.performStrategy(details)
+    );
+
+    this.gameBoardEditor.setStrategy(this.updateFishingVillageStrategy);
+    this.gameBoardEditor.performStrategy(details);
+
     const scores = this.scoreTracker.calculateScores(
       details.currentEmperorState,
       details.currentTradeRouteState,
       details.currentCityState,
       details.currentPopulationState,
-      details.currentResourceState
+      details.currentResourceState,
+      details.currentFishingVillageState
     );
     details.setCurrentScores(scores);
   }
 
   renderRoutine(details) {
     this.gameRenderer.setStrategy(this.boardRendererStrategy);
-    this.gameRenderer.performStrategy();
+    this.gameRenderer.performStrategy(details);
    // Apply visual red pulse effect to cells removed by global warming
    this.applyGlobalWarmingPulse(details.removedPeninsulas);
 

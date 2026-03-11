@@ -19,6 +19,7 @@ export const TRADE_ROUTE_POINTS = 1;
 export const TRADE_ROUTE_LENGTH_POINTS = 1;
 export const CITY_POINTS = 2;
 export const RESOURCE_POINTS = 1;
+export const FISHING_VILLAGE_POINTS = 1;
 export const MAX_UNDO = 50;
 export const GLOBAL_WARMING_BASE_CHANCE = 0.003;
 export const ADJACENT_OFFSETS = [

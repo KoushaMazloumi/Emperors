@@ -10,7 +10,8 @@ import {
   TRADE_ROUTE_POINTS,
   TRADE_ROUTE_LENGTH_POINTS,
   CITY_POINTS,
-  RESOURCE_POINTS
+  RESOURCE_POINTS,
+  FISHING_VILLAGE_POINTS
 } from "./Constants.mjs";
 
 import { StrategyDetails } from "./GameManagement.mjs";
@@ -84,6 +85,7 @@ export class StatusRenderer {
       "label-cities": `Cities (${CITY_POINTS} pts)`,
       "label-population": `Population (${POPULATION_POINTS} pt)`,
       "label-resources": `Resources (${RESOURCE_POINTS} pt)`,
+      "label-fishing-villages": `Fishing Villages (${FISHING_VILLAGE_POINTS} pt/shore)`,
     };
     for (const [className, text] of Object.entries(labels)) {
       document.querySelectorAll(`.${className}`).forEach((el) => {
@@ -148,7 +150,7 @@ export class StatusRenderer {
     let player1ResourceCount = 0;
     let player2ResourceCount = 0;
     const resources = details.currentResourceState;
-    if (cities !== null) {
+    if (resources !== null) {
       player1ResourceCount = resources[PLAYER_1].count;
 
       player2ResourceCount = resources[PLAYER_2].count;
@@ -160,6 +162,27 @@ export class StatusRenderer {
 
     player1ResourceElement.textContent = `${player1ResourceCount}`;
     player2ResourceElement.textContent = `${player2ResourceCount}`;
+
+    // Update player Fishing Village counts in the UI
+    let player1FVCount = 0;
+    let player1FVShoreline = 0;
+    let player2FVCount = 0;
+    let player2FVShoreline = 0;
+    const fishingVillages = details.currentFishingVillageState;
+    if (fishingVillages) {
+      player1FVCount = fishingVillages[PLAYER_1].count;
+      player1FVShoreline = fishingVillages[PLAYER_1].totalShoreline;
+      player2FVCount = fishingVillages[PLAYER_2].count;
+      player2FVShoreline = fishingVillages[PLAYER_2].totalShoreline;
+    }
+    const player1FVElement = document.getElementById("player1-fishing-villages");
+    const player2FVElement = document.getElementById("player2-fishing-villages");
+    if (player1FVElement) {
+      player1FVElement.textContent = `Lakes: ${player1FVCount}, Shore: ${player1FVShoreline}`;
+    }
+    if (player2FVElement) {
+      player2FVElement.textContent = `Lakes: ${player2FVCount}, Shore: ${player2FVShoreline}`;
+    }
 
     // Update player Trade Route counts in the UI
     let player1TradeRoutesCount = 0;
@@ -249,15 +272,28 @@ export class BoardRenderer {
     this.gridContainer = 0;
   }
   // Method to perform the strategy
-  performStrategy(renderer) {
+  performStrategy(renderer, details) {
     this.boardReference = renderer.getBoard();
     this.gridContainer = renderer.gridContainer;
+    this.details = details || null;
     this.renderBoard(this.boardReference);
   }
   // Method to render the board
   renderBoard() {
     if (!this.boardReference) {
       return;
+    }
+    // Build set of fishing village lake cells for fast lookup
+    let fishingVillageLakeCellSet = null;
+    if (this.details && this.details.currentFishingVillageState) {
+      fishingVillageLakeCellSet = new Set();
+      const fvState = this.details.currentFishingVillageState;
+      for (const [r, c] of fvState[PLAYER_1].lakeCells) {
+        fishingVillageLakeCellSet.add(`${r},${c}`);
+      }
+      for (const [r, c] of fvState[PLAYER_2].lakeCells) {
+        fishingVillageLakeCellSet.add(`${r},${c}`);
+      }
     }
     this.gridContainer.innerHTML = "";
     this.boardReference.getGrid().forEach((row, rowIndex) => {
@@ -291,6 +327,9 @@ export class BoardRenderer {
             if (cell.isPartOfCity) {
               permanentStone.classList.add("is-part-of-city");
             }
+            if (cell.isPartOfFishingVillage) {
+              permanentStone.classList.add("is-part-of-fishing-village");
+            }
             if (cell.stoneOwner === PLAYER_1) {
               permanentStone.classList.add("stone-player1");
             } else if (cell.stoneOwner === PLAYER_2) {
@@ -300,6 +339,12 @@ export class BoardRenderer {
           }
         } else if (cell && cell.type === "naturalResource") {
           cellElement.classList.add("resource");
+        }
+
+        // Mark water cells that are part of a fishing village lake
+        if (cell === null && fishingVillageLakeCellSet
+            && fishingVillageLakeCellSet.has(`${rowIndex},${cellIndex}`)) {
+          cellElement.classList.add("fishing-village-lake");
         }
 
         rowElement.appendChild(cellElement);

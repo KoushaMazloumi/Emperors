@@ -10,7 +10,8 @@ import {
   TRADE_ROUTE_POINTS,
   TRADE_ROUTE_LENGTH_POINTS,
   CITY_POINTS,
-  RESOURCE_POINTS
+  RESOURCE_POINTS,
+  FISHING_VILLAGE_POINTS
 } from "./Constants.mjs";
 
 //Manages turn switches and phase switches
@@ -178,7 +179,7 @@ export class ScoreTracker {
     };
   }
   
-  calculateScores(emperorState, tradeRouteState, cityState, populationState, resourceState) {
+  calculateScores(emperorState, tradeRouteState, cityState, populationState, resourceState, fishingVillageState) {
     // Reset scores
     this.scores = {
       [PLAYER_1]: 0,
@@ -246,7 +247,17 @@ export class ScoreTracker {
         this.scores[PLAYER_2] += resourceState[PLAYER_2].count * RESOURCE_POINTS;
       }
     }
-    
+
+    // Add fishing village points
+    if (fishingVillageState) {
+      if (fishingVillageState[PLAYER_1]) {
+        this.scores[PLAYER_1] += fishingVillageState[PLAYER_1].totalShoreline * FISHING_VILLAGE_POINTS;
+      }
+      if (fishingVillageState[PLAYER_2]) {
+        this.scores[PLAYER_2] += fishingVillageState[PLAYER_2].totalShoreline * FISHING_VILLAGE_POINTS;
+      }
+    }
+
     return this.scores;
   }
   
@@ -302,6 +313,7 @@ export class StrategyDetails {
     this.currentGlobalWarmingChance = null;
     this.removalCoordinates = null;
     this.currentScores = null; // Add currentScores property
+    this.currentFishingVillageState = null;
   }
   setCurrentPeninsulaState(currentPeninsulaState) {
     this.currentPeninsulaState = currentPeninsulaState;
@@ -334,6 +346,10 @@ export class StrategyDetails {
   }
   setCurrentResourceState(currentResourceState) {
     this.currentResourceState = currentResourceState;
+    return this;
+  }
+  setCurrentFishingVillageState(currentFishingVillageState) {
+    this.currentFishingVillageState = currentFishingVillageState;
     return this;
   }
 
