@@ -3,6 +3,7 @@ import {
   PIECE_SHAPE_SIZE,
   PIECE_COUNT,
   PLAYER_1,
+  MAX_UNDO,
 } from "./Constants.mjs";
 
 import {
@@ -91,6 +92,7 @@ export class Game {
     this.globalWarmingEventHandlingStrategy =
       new GlobalWarmingEventHandlingStrategy();
     this.scoreTracker = new ScoreTracker(); // Initialize ScoreTracker
+    this.undoStack = [];
   }
 
   // Method to execute a strategy based on the given action and details
@@ -101,6 +103,7 @@ export class Game {
         this.moveValidator.setStrategy(this.validateMapPiecePlacementStrategy);
         // If the move is valid, set the board editor strategy to add the map piece
         if (this.moveValidator.performStrategy(details)) {
+          this._saveSnapshot();
           this.gameBoardEditor.setStrategy(this.addMapPieceStrategy);
 
           this.gameBoardEditor.performStrategy(details);
@@ -119,6 +122,7 @@ export class Game {
         this.moveValidator.setStrategy(this.validateStonePlacementStrategy);
         // If the move is valid, set the board editor strategy to add the stone
         if (this.moveValidator.performStrategy(details)) {
+          this._saveSnapshot();
           this.gameBoardEditor.setStrategy(this.addStoneStrategy);
 
           this.gameBoardEditor.performStrategy(details);
@@ -153,7 +157,8 @@ export class Game {
         break;      case "rotate":
         this.moveValidator.setStrategy(this.validateMapPieceRotationStrategy);
         if (this.moveValidator.performStrategy(details)) {
-          this.gameBoard.replaceMapPiece(this.mapPieceRotator.rotate(details));
+          this._saveSnapshot();
+          this.mapPieceRotator.rotate(details);
         }
         break;
         case "autoplaceMapPiece":
@@ -162,6 +167,21 @@ export class Game {
       case "autoplaceAllMapPieces":
         return this._autoplaceAllMapPieces(details);
         
+      case "undo": {
+        if (this.undoStack.length === 0) break;
+        const snapshot = this.undoStack.pop();
+        // Restore game object state (turnManager, globalWarming trackers, etc.)
+        this._restoreSnapshot(snapshot);
+        // Also update the details object for rendering/display
+        details.setTurn(snapshot.currentTurn);
+        details.setCurrentPlayer(snapshot.currentPlayer);
+        details.setGamePhase(snapshot.gamePhase);
+        details.setCurrentMapPieceIndex(snapshot.currentMapPieceIndex);
+        this._recalculateDisplayData(details);
+        this.renderRoutine(details);
+        break;
+      }
+
       default:
         // Throw an error if the action is unknown
         throw new Error(`Unknown action: ${action}`);
@@ -187,38 +207,38 @@ export class Game {
     this.gameBoardEditor.setStrategy(this.globalWarmingEventHandlingStrategy);
     this.gameBoardEditor.performStrategy(details);
 
-    this.gameBoardSearcher.setStrategy(this.emperorCounter);
+    this._updateGameState(details);
+  }
 
+  _updateGameState(details) {
+    this.gameBoardSearcher.setStrategy(this.emperorCounter);
     details.setCurrentEmperorState(this.gameBoardSearcher.performStrategy());
 
     this.gameBoardEditor.setStrategy(this.updateEmeperorStrategy);
     this.gameBoardEditor.performStrategy(details);
 
     this.gameBoardSearcher.setStrategy(this.tradeRouteCounter);
-
     details.setCurrentTradeRouteState(this.gameBoardSearcher.performStrategy());
 
     this.gameBoardEditor.setStrategy(this.updateTradeRouteStrategy);
     this.gameBoardEditor.performStrategy(details);
 
     this.gameBoardSearcher.setStrategy(this.cityFinder);
-
     details.setCurrentCityState(this.gameBoardSearcher.performStrategy());
 
     this.gameBoardEditor.setStrategy(this.updateCityStrategy);
     this.gameBoardEditor.performStrategy(details);
 
     this.gameBoardSearcher.setStrategy(this.populationCounter);
-
     details.setCurrentPopulationState(
       this.gameBoardSearcher.performStrategy(details)
     );
 
     this.gameBoardSearcher.setStrategy(this.resourceCounter);
-
     details.setCurrentResourceState(
       this.gameBoardSearcher.performStrategy(details)
-    );    // Calculate scores based on current game state
+    );
+
     const scores = this.scoreTracker.calculateScores(
       details.currentEmperorState,
       details.currentTradeRouteState,
@@ -226,10 +246,9 @@ export class Game {
       details.currentPopulationState,
       details.currentResourceState
     );
-    
-    // Add scores to details object so StatusRenderer can access them
     details.setCurrentScores(scores);
   }
+
   renderRoutine(details) {
     this.gameRenderer.setStrategy(this.boardRendererStrategy);
     this.gameRenderer.performStrategy();
@@ -306,17 +325,63 @@ export class Game {
       }
     });
   }
+
+  _restoreSnapshot(snapshot) {
+    this.gameBoard.restoreGrid(snapshot.grid, snapshot.mapPieces);
+    this.turnManager.currentTurn = snapshot.currentTurn;
+    this.currentPlayer = snapshot.currentPlayer;
+    this.currentMapPieceIndex = snapshot.currentMapPieceIndex;
+    this.turnManager.gamePhase = snapshot.gamePhase;
+    this.globalWarmingChanceTracker.removedPeninsulas = snapshot.gwTrackerPeninsulas;
+    this.globalWarmingEventFinder.removedPeninsulas = snapshot.gwFinderPeninsulas;
+    if (this.activePulses) {
+      this.activePulses.clear();
+    }
+  }
+
+  // NOTE: Any new action that mutates game state should call _saveSnapshot()
+  // before making changes to support undo.
+  _saveSnapshot() {
+    if (this.undoStack.length >= MAX_UNDO) {
+      this.undoStack.shift();
+    }
+    this.undoStack.push({
+      grid: JSON.parse(JSON.stringify(this.gameBoard.getGrid())),
+      mapPieces: JSON.parse(JSON.stringify(this.gameBoard.getAllMapPieces())),
+      currentTurn: this.turnManager.currentTurn,
+      currentPlayer: this.currentPlayer,
+      currentMapPieceIndex: this.currentMapPieceIndex,
+      gamePhase: this.turnManager.gamePhase,
+      gwTrackerPeninsulas: JSON.parse(JSON.stringify(this.globalWarmingChanceTracker.removedPeninsulas)),
+      gwFinderPeninsulas: JSON.parse(JSON.stringify(this.globalWarmingEventFinder.removedPeninsulas)),
+    });
+  }
+
+  _recalculateDisplayData(details) {
+    this.gameBoardSearcher.setStrategy(this.peninsulaFinder);
+    details.setCurrentPeninsulaState(
+      this.gameBoardSearcher.performStrategy(details)
+    );
+    details.setRemovedPeninsulas(this.globalWarmingEventFinder.removedPeninsulas);
+    details.setCurrentGlobalWarmingChance(
+      this.globalWarmingChanceTracker.calculateChance(details)
+    );
+
+    this._updateGameState(details);
+  }
+
   /**
    * Attempts to automatically place the current map piece at a valid position.
    * Tries different positions and rotations until a valid placement is found.
-   * 
+   *
    * @param {StrategyDetails} details - Strategy details with game state
    * @returns {boolean} True if placement was successful, false otherwise
    * @private
    */
-  _autoplaceMapPiece(details) {
+  _autoplaceMapPiece(details, skipSnapshot = false) {
     console.log(`Attempting to autoplace piece #${this.currentMapPieceIndex}`);
-    
+    if (!skipSnapshot) this._saveSnapshot();
+
     // Get the current map piece
     const piece = this.gameBoard.getSingleMapPiece(this.currentMapPieceIndex);
     details.setPiece(piece);
@@ -383,16 +448,19 @@ export class Game {
       
       // If no valid placement found after all rotations, restore original shape
       if (!success) {
+        if (!skipSnapshot) this.undoStack.pop(); // Remove snapshot since nothing changed
         piece.shape = originalShape;
         piece.shapeRelativeSquareLocations = originalRelativeSquareLocations;
         console.log("No valid placement found after trying all rotations");
       }
-      
+
       return success;
     } catch (error) {
       // Error recovery - restore original piece shape
+      if (!skipSnapshot) this.undoStack.pop(); // Remove snapshot since action failed
       piece.shape = originalShape;
-      piece.shapeRelativeSquareLocations = originalRelativeSquareLocations;      console.error("Error during autoplace:", error);
+      piece.shapeRelativeSquareLocations = originalRelativeSquareLocations;
+      console.error("Error during autoplace:", error);
       return false;
     }
   }
@@ -407,7 +475,8 @@ export class Game {
    */
   _autoplaceAllMapPieces(details) {
     console.log("Attempting to autoplace all remaining pieces");
-    
+    this._saveSnapshot();
+
     const startIndex = this.currentMapPieceIndex;
     const totalPieces = this.gameBoard.getAllMapPieces().length;
     let placedCount = 0;
@@ -437,7 +506,7 @@ export class Game {
           .build();
           
         // Try to place the current piece
-        const placementSuccess = this._autoplaceMapPiece(placementDetails);
+        const placementSuccess = this._autoplaceMapPiece(placementDetails, true);
         
         if (placementSuccess) {
           placedCount++;
@@ -457,7 +526,11 @@ export class Game {
       }
       
       console.log(`Auto-placed ${placedCount} pieces, failed to place ${failedCount} pieces`);
-      
+
+      if (placedCount === 0) {
+        this.undoStack.pop(); // Nothing was placed, remove snapshot
+      }
+
       return {
         success: failedCount === 0 && placedCount > 0,
         placedCount,
@@ -465,10 +538,22 @@ export class Game {
       };
     } catch (error) {
       console.error("Error during autoplace all:", error);
+      if (this.undoStack.length > 0) {
+        const snapshot = this.undoStack.pop();
+        this._restoreSnapshot(snapshot);
+        const restoreDetails = new StrategyDetails()
+          .setTurn(snapshot.currentTurn)
+          .setCurrentPlayer(snapshot.currentPlayer)
+          .setGamePhase(snapshot.gamePhase)
+          .setCurrentMapPieceIndex(snapshot.currentMapPieceIndex)
+          .build();
+        this._recalculateDisplayData(restoreDetails);
+        this.renderRoutine(restoreDetails);
+      }
       return {
         success: false,
-        placedCount,
-        failedCount: totalPieces - startIndex - placedCount
+        placedCount: 0,
+        failedCount: totalPieces - startIndex
       };
     }
   }
@@ -599,6 +684,7 @@ export class Game {
     this.gameLogger.logGeneratedShapes(this.gameBoard.getAllMapPieces());
     this.executeStrategy("addNaturalResources", initializationDetails);
     this.executeStrategy("renderBoard");
+    this.statusRenderStrategy._ensureLabelsInitialized();
   }
 
   // Method to start the game

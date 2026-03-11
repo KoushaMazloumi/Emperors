@@ -32,23 +32,23 @@
               <td id="player1-score"></td>
             </tr>
             <tr>
-              <th>Emperors</th>
+              <th class="label-emperors">Emperors</th>
               <td id="player1-emperor"></td>
             </tr>
             <tr>
-              <th>Trade Routes</th>
+              <th class="label-trade-routes">Trade Routes</th>
               <td id="player1-trade-routes"></td>
             </tr>
             <tr>
-              <th>Cities</th>
+              <th class="label-cities">Cities</th>
               <td id="player1-cities"></td>
             </tr>
             <tr>
-              <th>Population</th>
+              <th class="label-population">Population</th>
               <td id="player1-population"></td>
             </tr>
             <tr>
-              <th>Resources</th>
+              <th class="label-resources">Resources</th>
               <td id="player1-resources"></td>
             </tr>
             <tr>
@@ -59,23 +59,23 @@
               <td id="player2-score"></td>
             </tr>
             <tr>
-              <th>Emperors</th>
+              <th class="label-emperors">Emperors</th>
               <td id="player2-emperor"></td>
             </tr>
             <tr>
-              <th>Trade Routes</th>
+              <th class="label-trade-routes">Trade Routes</th>
               <td id="player2-trade-routes"></td>
             </tr>
             <tr>
-              <th>Cities</th>
+              <th class="label-cities">Cities</th>
               <td id="player2-cities"></td>
             </tr>
             <tr>
-              <th>Population</th>
+              <th class="label-population">Population</th>
               <td id="player2-population"></td>
             </tr>
             <tr>
-              <th>Resources</th>
+              <th class="label-resources">Resources</th>
               <td id="player2-resources"></td>
             </tr>
           </table>
@@ -83,16 +83,23 @@
       </div>
 
       <div id="main">
-        <div id="game-board"></div>
+        <div id="board-with-labels">
+          <div id="corner-spacer"></div>
+          <div id="column-labels"></div>
+          <div id="row-labels"></div>
+          <div id="game-board"></div>
+        </div>
       </div>
     </div>
     <div id="game-controls">
       <ul>
         <li>
           <button id="undo-button">Undo</button>
-        </li>        <li>
+        </li>
+        <li>
           <button id="rotate-button">Rotate</button>
-        </li>        <li>
+        </li>
+        <li>
           <button id="autoplace-button" title="Automatically place the current map piece">Auto Place</button>
         </li>
         <li>
@@ -147,16 +154,16 @@
       </p>
       <ul>
         <li>The player with more stones on a map piece becomes the emperor of that piece.</li>
-        <li>Each emperor is worth 1 point.</li>
-        <li>The number of squares in the ruled map piece provides an additional 1 point per square population bonus.</li>
+        <li id="rule-emperor-pts">Each emperor is worth points.</li>
+        <li id="rule-population-pts">The number of squares in the ruled map piece provides a population bonus.</li>
       </ul>
       <p>
         <strong>Trade Route Points:</strong>
       </p>
       <ul>
         <li>Trade routes are established by placing two stones on either side of a gap.</li>
-        <li>Players earn 1 point per trade route.</li>
-        <li>Gaps between trade ports (empty non-map sapces) count for 1 additional point each.</li>
+        <li id="rule-trade-route-pts">Players earn points per trade route.</li>
+        <li id="rule-trade-route-gap-pts">Gaps between trade ports (empty non-map spaces) count for additional points each.</li>
         <li>Trade routes are counted horizontally and vertically.</li>
       </ul>
       <p>
@@ -164,8 +171,8 @@
       </p>
       <ul>
         <li>Cities consist of 3 or more stones of the same player in a vertical or horizontal line.</li>
-        <li>Players earn 1 point by establishing a city</li>
-        <li>The number of stones in the line does not affect the score; each city is worth 1 point.</li>
+        <li id="rule-city-pts">Players earn points by establishing a city.</li>
+        <li id="rule-city-pts-note">The number of stones in the line does not affect the score.</li>
       </ul>
       <p>The player with the highest score when the map is fully occupied wins the game!</p>
     </div>

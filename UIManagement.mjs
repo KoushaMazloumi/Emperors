@@ -1,9 +1,16 @@
 import {
+  GRID_SIZE,
   PIECE_SHAPE_SIZE,
   MAP_PHASE,
   STONE_PHASE,
   PLAYER_1,
   PLAYER_2,
+  EMPEROR_POINTS,
+  POPULATION_POINTS,
+  TRADE_ROUTE_POINTS,
+  TRADE_ROUTE_LENGTH_POINTS,
+  CITY_POINTS,
+  RESOURCE_POINTS
 } from "./Constants.mjs";
 
 import { StrategyDetails } from "./GameManagement.mjs";
@@ -39,9 +46,67 @@ export class StatusRenderer {
   constructor() {
     this.boardReference = [];
     this.gridContainer = 0;
+    this._labelsInitialized = false;
+  }
+
+  _ensureLabelsInitialized() {
+    if (this._labelsInitialized) return;
+    this._labelsInitialized = true;
+    this._initGridLabels();
+    this._initScoringLabels();
+  }
+
+  _initGridLabels() {
+    const colLabels = document.getElementById("column-labels");
+    if (colLabels) {
+      colLabels.innerHTML = "";
+      for (let i = 0; i < GRID_SIZE; i++) {
+        const span = document.createElement("span");
+        span.textContent = String.fromCharCode(65 + i);
+        colLabels.appendChild(span);
+      }
+    }
+    const rowLabels = document.getElementById("row-labels");
+    if (rowLabels) {
+      rowLabels.innerHTML = "";
+      for (let i = 0; i < GRID_SIZE; i++) {
+        const span = document.createElement("span");
+        span.textContent = String(i + 1);
+        rowLabels.appendChild(span);
+      }
+    }
+  }
+
+  _initScoringLabels() {
+    const labels = {
+      "label-emperors": `Emperors (${EMPEROR_POINTS} pt)`,
+      "label-trade-routes": `Trade Routes (${TRADE_ROUTE_POINTS} pt + ${TRADE_ROUTE_LENGTH_POINTS} pt/gap)`,
+      "label-cities": `Cities (${CITY_POINTS} pts)`,
+      "label-population": `Population (${POPULATION_POINTS} pt)`,
+      "label-resources": `Resources (${RESOURCE_POINTS} pt)`,
+    };
+    for (const [className, text] of Object.entries(labels)) {
+      document.querySelectorAll(`.${className}`).forEach((el) => {
+        el.textContent = text;
+      });
+    }
+
+    const rules = {
+      "rule-emperor-pts": `Each emperor is worth ${EMPEROR_POINTS} point.`,
+      "rule-population-pts": `The number of squares in the ruled map piece provides an additional ${POPULATION_POINTS} point per square population bonus.`,
+      "rule-trade-route-pts": `Players earn ${TRADE_ROUTE_POINTS} point per trade route.`,
+      "rule-trade-route-gap-pts": `Gaps between trade ports (empty non-map spaces) count for ${TRADE_ROUTE_LENGTH_POINTS} additional point each.`,
+      "rule-city-pts": `Players earn ${CITY_POINTS} points by establishing a city.`,
+      "rule-city-pts-note": `The number of stones in the line does not affect the score; each city is worth ${CITY_POINTS} points.`,
+    };
+    for (const [id, text] of Object.entries(rules)) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    }
   }
   // Method to perform the strategy
   performStrategy(renderer, details) {
+    this._ensureLabelsInitialized();
     this.boardReference = renderer.getBoard();
     this.renderStatus(this.boardReference, details);
   }
@@ -348,10 +413,14 @@ export class EventListener {  constructor(game, gameBoard) {
     this.game = game;
     this.gameBoard = gameBoard;
     this.rotateButton = document.getElementById("rotate-button");
+    this.undoButton = document.getElementById("undo-button");
     this.autoplaceButton = document.getElementById("autoplace-button");
     this.autoplaceAllButton = document.getElementById("autoplace-all-button");
     // Get the grid container element
     this.gridContainer = document.getElementById("game-board");
+
+    // Shared processing flag to prevent concurrent mutations from autoplace and undo
+    this.isProcessing = false;
 
     // Attach event listeners to the grid container and undo button
     this.attachEventListeners();
@@ -360,6 +429,7 @@ export class EventListener {  constructor(game, gameBoard) {
     setTimeout(() => {
       this.updateAutoplaceButtonState();
       this.updateAutoplaceAllButtonState();
+      this.updateUndoButtonState();
     }, 0);
   }
 
@@ -391,42 +461,50 @@ export class EventListener {  constructor(game, gameBoard) {
     });    this.rotateButton.addEventListener("click", () => {
       console.log("rotate");
       this.handleRotate();
-    });    // Add autoplace button event listener
+    });
+
+    if (this.undoButton) {
+      this.undoButton.addEventListener("click", () => {
+        this.handleUndo();
+      });
+    }
+
+    // Add autoplace button event listener
     if (this.autoplaceButton) {
-      let isProcessing = false;
       this.autoplaceButton.addEventListener("click", () => {
         // Prevent multiple rapid clicks
-        if (isProcessing || this.autoplaceButton.disabled) return;
-        
-        isProcessing = true;
+        if (this.isProcessing || this.autoplaceButton.disabled) return;
+
+        this.isProcessing = true;
         this.autoplaceButton.disabled = true;
-        
+
         console.log("autoplace clicked");
         this.handleAutoplace()
           .finally(() => {
-            isProcessing = false;
+            this.isProcessing = false;
             this.updateAutoplaceButtonState();
             this.updateAutoplaceAllButtonState();
+            this.updateUndoButtonState();
           });
       });
     }
     
     // Add autoplace-all button event listener
     if (this.autoplaceAllButton) {
-      let isProcessingAll = false;
       this.autoplaceAllButton.addEventListener("click", () => {
         // Prevent multiple rapid clicks
-        if (isProcessingAll || this.autoplaceAllButton.disabled) return;
-        
-        isProcessingAll = true;
+        if (this.isProcessing || this.autoplaceAllButton.disabled) return;
+
+        this.isProcessing = true;
         this.autoplaceAllButton.disabled = true;
-        
+
         console.log("autoplace all clicked");
         this.handleAutoplaceAll()
           .finally(() => {
-            isProcessingAll = false;
+            this.isProcessing = false;
             this.updateAutoplaceButtonState();
             this.updateAutoplaceAllButtonState();
+            this.updateUndoButtonState();
           });
       });
     }
@@ -447,7 +525,22 @@ export class EventListener {  constructor(game, gameBoard) {
     // NEW: Update button state after rotation
     this.updateAutoplaceButtonState();
   }
-  
+
+  handleUndo() {
+    // Prevent undo during autoplace processing
+    if (this.isProcessing) return;
+
+    let details = new StrategyDetails()
+      .setGamePhase(this.game.turnManager.gamePhase)
+      .setTurn(this.game.turnManager.currentTurn)
+      .setCurrentPlayer(this.game.currentPlayer)
+      .build();
+    this.game.executeStrategy("undo", details);
+    this.updateAutoplaceButtonState();
+    this.updateAutoplaceAllButtonState();
+    this.updateUndoButtonState();
+  }
+
   /**
    * Handles the autoplace button click.
    * Attempts to automatically place the current map piece.
@@ -615,6 +708,7 @@ export class EventListener {  constructor(game, gameBoard) {
     
     // NEW: Update button state after click action
     this.updateAutoplaceButtonState();
+    this.updateUndoButtonState();
   }
   
   /**
@@ -693,6 +787,17 @@ export class EventListener {  constructor(game, gameBoard) {
       this.autoplaceAllButton.classList.add("disabled");
     } else {
       this.autoplaceAllButton.classList.remove("disabled");
+    }
+  }
+
+  updateUndoButtonState() {
+    if (!this.undoButton) return;
+    const hasUndo = this.game.undoStack.length > 0;
+    this.undoButton.disabled = !hasUndo;
+    if (this.undoButton.disabled) {
+      this.undoButton.classList.add("disabled");
+    } else {
+      this.undoButton.classList.remove("disabled");
     }
   }
 }

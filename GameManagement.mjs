@@ -4,7 +4,13 @@ import {
   STARTING_PHASE, // Add STARTING_PHASE
   MAP_PHASE_TURNS_THRESHOLD, // Add MAP_PHASE_TURNS_THRESHOLD
   STONE_PHASE, // Add STONE_PHASE
-  GLOBAL_WARMING_BASE_CHANCE // Add GLOBAL_WARMING_BASE_CHANCE
+  GLOBAL_WARMING_BASE_CHANCE, // Add GLOBAL_WARMING_BASE_CHANCE
+  EMPEROR_POINTS,
+  POPULATION_POINTS,
+  TRADE_ROUTE_POINTS,
+  TRADE_ROUTE_LENGTH_POINTS,
+  CITY_POINTS,
+  RESOURCE_POINTS
 } from "./Constants.mjs";
 
 //Manages turn switches and phase switches
@@ -179,67 +185,65 @@ export class ScoreTracker {
       [PLAYER_2]: 0
     };
     
-    // Add emperor points (1 point per emperor)
+    // Add emperor points
     if (emperorState) {
-      // Check if emperorState is an array before iterating
       if (Array.isArray(emperorState)) {
         for (const emperor of emperorState) {
           if (emperor.emperor === PLAYER_1) {
-            this.scores[PLAYER_1] += 1;
+            this.scores[PLAYER_1] += EMPEROR_POINTS;
           } else if (emperor.emperor === PLAYER_2) {
-            this.scores[PLAYER_2] += 1;
+            this.scores[PLAYER_2] += EMPEROR_POINTS;
           }
         }
       } else {
-        // Handle the case where emperorState is an object (as seen in UIManagement.mjs)
         for (const key in emperorState) {
           if (Object.prototype.hasOwnProperty.call(emperorState, key)) {
             if (emperorState[key].emperor === PLAYER_1) {
-              this.scores[PLAYER_1] += 1;
+              this.scores[PLAYER_1] += EMPEROR_POINTS;
             } else if (emperorState[key].emperor === PLAYER_2) {
-              this.scores[PLAYER_2] += 1;
+              this.scores[PLAYER_2] += EMPEROR_POINTS;
             }
           }
         }
       }
     }
-    
-    // Add population points (1 point per square in ruled map pieces)
+
+    // Add population points
     if (populationState) {
-      this.scores[PLAYER_1] += populationState[PLAYER_1] || 0; // Add || 0 for safety
-      this.scores[PLAYER_2] += populationState[PLAYER_2] || 0; // Add || 0 for safety
+      this.scores[PLAYER_1] += (populationState[PLAYER_1] || 0) * POPULATION_POINTS;
+      this.scores[PLAYER_2] += (populationState[PLAYER_2] || 0) * POPULATION_POINTS;
     }
-    
-    // Add trade route points (1 point per route plus points for gaps)
+
+    // Add trade route points
     if (tradeRouteState) {
       if (tradeRouteState[PLAYER_1]) {
-        this.scores[PLAYER_1] += tradeRouteState[PLAYER_1].count;
-        this.scores[PLAYER_1] += tradeRouteState[PLAYER_1].totalLength;
+        this.scores[PLAYER_1] += tradeRouteState[PLAYER_1].count * TRADE_ROUTE_POINTS;
+        this.scores[PLAYER_1] += tradeRouteState[PLAYER_1].totalLength * TRADE_ROUTE_LENGTH_POINTS;
       }
-      
+
       if (tradeRouteState[PLAYER_2]) {
-        this.scores[PLAYER_2] += tradeRouteState[PLAYER_2].count;
-        this.scores[PLAYER_2] += tradeRouteState[PLAYER_2].totalLength;
+        this.scores[PLAYER_2] += tradeRouteState[PLAYER_2].count * TRADE_ROUTE_POINTS;
+        this.scores[PLAYER_2] += tradeRouteState[PLAYER_2].totalLength * TRADE_ROUTE_LENGTH_POINTS;
       }
     }
-    
-    // Add city points (2 points per city) // Updated comment
+
+    // Add city points
     if (cityState) {
       if (cityState[PLAYER_1]) {
-        this.scores[PLAYER_1] += cityState[PLAYER_1].count * 2; // Changed 1 to 2
+        this.scores[PLAYER_1] += cityState[PLAYER_1].count * CITY_POINTS;
       }
       if (cityState[PLAYER_2]) {
-        this.scores[PLAYER_2] += cityState[PLAYER_2].count * 2; // Changed 1 to 2
+        this.scores[PLAYER_2] += cityState[PLAYER_2].count * CITY_POINTS;
       }
     }
-    
-    // Add resource points (1 point per resource)
+
+    // Add resource points
     if (resourceState) {
       if (resourceState[PLAYER_1]) {
-        this.scores[PLAYER_1] += resourceState[PLAYER_1].count;
+        this.scores[PLAYER_1] += resourceState[PLAYER_1].count * RESOURCE_POINTS;
       }
       if (resourceState[PLAYER_2]) {
-        this.scores[PLAYER_2] += resourceState[PLAYER_2].count;
+        this.scores[PLAYER_2] += resourceState[PLAYER_2].count * RESOURCE_POINTS;
       }
     }
     

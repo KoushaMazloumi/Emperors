@@ -13,6 +13,13 @@ export const MAP_PHASE_TURNS_THRESHOLD = 10;
 export const STONE_PHASE = "stone";
 export const FIRST_STONE_TURNS_THRESHOLD = MAP_PHASE_TURNS_THRESHOLD + 1;
 export const CITY_LENGTH_THRESHOLD = 3;
+export const EMPEROR_POINTS = 1;
+export const POPULATION_POINTS = 1;
+export const TRADE_ROUTE_POINTS = 1;
+export const TRADE_ROUTE_LENGTH_POINTS = 1;
+export const CITY_POINTS = 2;
+export const RESOURCE_POINTS = 1;
+export const MAX_UNDO = 50;
 export const GLOBAL_WARMING_BASE_CHANCE = 0.003;
 export const ADJACENT_OFFSETS = [
   {

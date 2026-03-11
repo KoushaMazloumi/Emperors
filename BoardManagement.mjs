@@ -80,6 +80,21 @@ export class BoardState {
   getSingleMapPiece(mapPieceIndex) {
     return this.#mapPieces[mapPieceIndex];
   }
+
+  restoreGrid(grid, mapPieces) {
+    if (!Array.isArray(grid) || !Array.isArray(mapPieces)) {
+      throw new Error("restoreGrid requires valid grid and mapPieces arrays");
+    }
+    if (grid.length !== this.#grid.length ||
+        grid.some(row => !Array.isArray(row) || row.length !== this.#grid[0].length)) {
+      throw new Error("restoreGrid: grid dimensions do not match board size");
+    }
+    this.#grid = JSON.parse(JSON.stringify(grid));
+    this.#mapPieces = JSON.parse(JSON.stringify(mapPieces));
+    this.updateMapPiecesArray();
+    this.historyManager.clearHistory();
+    this.historyManager.addState(this.#grid);
+  }
 }
 export class BoardStateEditor {
   #board;

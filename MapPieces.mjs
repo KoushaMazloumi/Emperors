@@ -92,10 +92,12 @@ export class MapPieceGenerator {
     let x = center;
     let y = center;
     // Determine the number of remaining cells based on the generatedPieceCount
+    // Even-total pieces (2, 4, 6 cells) allow emperor ties, reducing dominant-emperor swings
+    const evenRemaining = [1, 3, 5]; // +1 center = totals of 2, 4, 6
     let remaining =
       this.generatedPieceCount < FORCED_PIECE_SHAPE_THRESHOLD
         ? FORCED_PIECE_SHAPE_THRESHOLD
-        : Math.floor(Math.random() * 5) + 2;
+        : evenRemaining[Math.floor(Math.random() * evenRemaining.length)];
     while (remaining > 0) {
       const { dx, dy } =
         directions[Math.floor(Math.random() * directions.length)];
@@ -164,7 +166,7 @@ export class MapPieceRotator {
 
     this.piece.shape = newShape;
     this.piece.shapeRelativeSquareLocations = newShapeRelativeSquareLocations;
-    return details.currentMapPieceIndex, this.piece;
+    return this.piece;
   }
 
   getshapeRelativeSquareLocations(shape) {
