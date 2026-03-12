@@ -199,17 +199,20 @@ export class Game {
       this.gameBoardSearcher.performStrategy(details)
     );
 
-    details.setCurrentGlobalWarmingChance(
-      this.globalWarmingChanceTracker.calculateChance(details)
-    );
+    const flags = this._getFeatureFlags();
+    if (flags.globalWarming) {
+      details.setCurrentGlobalWarmingChance(
+        this.globalWarmingChanceTracker.calculateChance(details)
+      );
 
-    this.gameBoardSearcher.setStrategy(this.globalWarmingEventFinder);
-    details.setRemovalCoordinates(
-      this.gameBoardSearcher.performStrategy(details)
-    );
+      this.gameBoardSearcher.setStrategy(this.globalWarmingEventFinder);
+      details.setRemovalCoordinates(
+        this.gameBoardSearcher.performStrategy(details)
+      );
 
-    this.gameBoardEditor.setStrategy(this.globalWarmingEventHandlingStrategy);
-    this.gameBoardEditor.performStrategy(details);
+      this.gameBoardEditor.setStrategy(this.globalWarmingEventHandlingStrategy);
+      this.gameBoardEditor.performStrategy(details);
+    }
 
     this._updateGameState(details);
   }
@@ -221,17 +224,22 @@ export class Game {
     this.gameBoardEditor.setStrategy(this.updateEmeperorStrategy);
     this.gameBoardEditor.performStrategy(details);
 
-    this.gameBoardSearcher.setStrategy(this.tradeRouteCounter);
-    details.setCurrentTradeRouteState(this.gameBoardSearcher.performStrategy());
+    const flags = this._getFeatureFlags();
+    if (flags.tradeRoutes) {
+      this.gameBoardSearcher.setStrategy(this.tradeRouteCounter);
+      details.setCurrentTradeRouteState(this.gameBoardSearcher.performStrategy());
 
-    this.gameBoardEditor.setStrategy(this.updateTradeRouteStrategy);
-    this.gameBoardEditor.performStrategy(details);
+      this.gameBoardEditor.setStrategy(this.updateTradeRouteStrategy);
+      this.gameBoardEditor.performStrategy(details);
+    }
 
-    this.gameBoardSearcher.setStrategy(this.cityFinder);
-    details.setCurrentCityState(this.gameBoardSearcher.performStrategy());
+    if (flags.cities) {
+      this.gameBoardSearcher.setStrategy(this.cityFinder);
+      details.setCurrentCityState(this.gameBoardSearcher.performStrategy());
 
-    this.gameBoardEditor.setStrategy(this.updateCityStrategy);
-    this.gameBoardEditor.performStrategy(details);
+      this.gameBoardEditor.setStrategy(this.updateCityStrategy);
+      this.gameBoardEditor.performStrategy(details);
+    }
 
     this.gameBoardSearcher.setStrategy(this.populationCounter);
     details.setCurrentPopulationState(
@@ -243,13 +251,15 @@ export class Game {
       this.gameBoardSearcher.performStrategy(details)
     );
 
-    this.gameBoardSearcher.setStrategy(this.fishingVillageFinder);
-    details.setCurrentFishingVillageState(
-      this.gameBoardSearcher.performStrategy(details)
-    );
+    if (flags.fishingVillages) {
+      this.gameBoardSearcher.setStrategy(this.fishingVillageFinder);
+      details.setCurrentFishingVillageState(
+        this.gameBoardSearcher.performStrategy(details)
+      );
 
-    this.gameBoardEditor.setStrategy(this.updateFishingVillageStrategy);
-    this.gameBoardEditor.performStrategy(details);
+      this.gameBoardEditor.setStrategy(this.updateFishingVillageStrategy);
+      this.gameBoardEditor.performStrategy(details);
+    }
 
     const scores = this.scoreTracker.calculateScores(
       details.currentEmperorState,
@@ -260,6 +270,19 @@ export class Game {
       details.currentFishingVillageState
     );
     details.setCurrentScores(scores);
+  }
+
+  _getFeatureFlags() {
+    const isEnabled = (id) => {
+      const el = document.getElementById(id);
+      return !el || el.checked;
+    };
+    return {
+      globalWarming: isEnabled("checkGlobalWarming"),
+      tradeRoutes: isEnabled("checkTradeRoutes"),
+      cities: isEnabled("checkCities"),
+      fishingVillages: isEnabled("checkFishingVillages"),
+    };
   }
 
   renderRoutine(details) {

@@ -238,31 +238,6 @@ th[colspan="2"] {
   line-height: 1;
 }
 
-/* Fishing village shoreline stone icon — wave symbol ≋ */
-.is-part-of-fishing-village:before {
-  content: "\224B";
-  font-size: small;
-  line-height: 1;
-}
-
-.is-part-of-fishing-village.is-part-of-route:before {
-  content: "\224B\21B9";
-  font-size: x-small;
-  line-height: 1;
-}
-
-.is-part-of-fishing-village.is-part-of-city:before {
-  content: "\224B\2722";
-  font-size: x-small;
-  line-height: 1;
-}
-
-.is-part-of-fishing-village.is-part-of-city.is-part-of-route:before {
-  content: "\224B\2725";
-  font-size: x-small;
-  line-height: 1;
-}
-
 /* Fishing village lake water cells */
 .cell.fishing-village-lake {
   position: relative;
@@ -270,7 +245,7 @@ th[colspan="2"] {
 }
 
 .cell.fishing-village-lake::after {
-  content: "\2248";
+  content: "\1F41F";
   position: absolute;
   top: 50%;
   left: 50%;
