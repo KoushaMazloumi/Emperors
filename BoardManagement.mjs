@@ -13,7 +13,6 @@ import {
   BLOCKADE_TYPE,
 } from "./Constants.mjs";
 
-import { HistoryManager } from "./GameManagement.mjs";
 
 // ********************Board state classes********************
 // Our actual board state that needs to remain our single source of truth
@@ -36,8 +35,6 @@ export class BoardState {
       this.mapPieces = [];
     }
 
-    this.historyManager = new HistoryManager();
-    this.historyManager.addState(this.#grid);
   }
   setMapPieces(mapPieces) {
     this.#mapPieces = mapPieces;
@@ -50,21 +47,30 @@ export class BoardState {
     // Update the grid with a new grid
     this.#grid = newGrid;
     this.updateMapPiecesArray();
-    this.historyManager.addState(this.#grid);
   }
 
   updateMapPiecesArray() {
-    //iterate through the mapPieces array
-    for (let i = 0; i < this.#mapPieces.length; i++) {
-      for (let row = 0; row < this.#grid.length; row++) {
-        for (let col = 0; col < this.#grid[row].length; col++) {
-          if (
-            this.#grid[row][col] &&
-            this.#grid[row][col].mapPieceID === this.#mapPieces[i].id
-          ) {
-            //once the cell is found, update the this.#mapPieces[i] to match the mapPiece in the grid cell
-            this.#mapPieces[i] = this.#grid[row][col].mapPiece;
-            break;
+    // Rebuild MapPiece cross-references in grid cells (Issue 10 fix)
+    // After JSON.parse/stringify, grid cells have mapPieceID but mapPiece reference is lost.
+    // This method reconnects cell.mapPiece to the actual MapPiece instance in #mapPieces.
+    for (let row = 0; row < this.#grid.length; row++) {
+      for (let col = 0; col < this.#grid[row].length; col++) {
+        const cell = this.#grid[row][col];
+
+        // Only process non-null cells with mapPiece type and mapPieceID
+        if (
+          cell !== null &&
+          cell.type === "mapPiece" &&
+          typeof cell.mapPieceID === "number"
+        ) {
+          // Find the MapPiece object in #mapPieces by ID
+          const matchingPiece = this.#mapPieces.find(
+            (piece) => piece.id === cell.mapPieceID
+          );
+
+          if (matchingPiece) {
+            // Restore the reference in the grid cell
+            this.#grid[row][col].mapPiece = matchingPiece;
           }
         }
       }
@@ -93,8 +99,6 @@ export class BoardState {
     this.#grid = JSON.parse(JSON.stringify(grid));
     this.#mapPieces = JSON.parse(JSON.stringify(mapPieces));
     this.updateMapPiecesArray();
-    this.historyManager.clearHistory();
-    this.historyManager.addState(this.#grid);
   }
 }
 export class BoardStateEditor {
@@ -190,11 +194,23 @@ export class BoardStateSearcher {
 }
 // ********************Board Search Strategies********************
 
+/**
+ * GlobalWarmingEventFinder — Searches grid for peninsulas susceptible to global warming
+ *
+ * Constructor: No longer takes Game instance. Now receives globalWarmingChanceTracker
+ * via details object in performStrategy() call.
+ *
+ * @param {BoardStateSearcher} boardStateSearcher - The searcher managing this strategy
+ * @param {StrategyDetails} details - Must contain:
+ *   - currentGridCopyState: Grid snapshot
+ *   - currentGlobalWarmingChance: Current warming chance percentage
+ *   - currentPeninsulaState.peninsulas: Array of peninsula objects
+ *   - globalWarmingChanceTracker: Tracker instance to calculate new chance
+ */
 export class GlobalWarmingEventFinder {
-  constructor(game) {
+  constructor() {
     this.gridCOPY = null;
     this.removedPeninsulas = [];
-    this.game = game;
   }
 
   performStrategy(boardStateSearcher, details) {
@@ -202,6 +218,13 @@ export class GlobalWarmingEventFinder {
 
     console.log("global warming chance: ", details.currentGlobalWarmingChance);
     const peninsulas = details.currentPeninsulaState.peninsulas;
+
+    // Get the globalWarmingChanceTracker from details
+    const globalWarmingChanceTracker = details.globalWarmingChanceTracker;
+    if (!globalWarmingChanceTracker) {
+      throw new Error('globalWarmingChanceTracker is required in details for GlobalWarmingEventFinder');
+    }
+
     const gridsToRemove = peninsulas
       .filter((peninsula) => {
         const roll = Math.random();
@@ -218,8 +241,9 @@ export class GlobalWarmingEventFinder {
             time: Date.now(),
           });
           details.setRemovedPeninsulas(this.removedPeninsulas);
+          // Use the tracker passed via details instead of this.game reference
           details.setCurrentGlobalWarmingChance(
-            this.game.globalWarmingChanceTracker.calculateChance(details)
+            globalWarmingChanceTracker.calculateChance(details)
           );
           console.log("new chance:", details.currentGlobalWarmingChance);
           return true;
@@ -995,7 +1019,7 @@ export class ValidateMapPieceRotationStrategy {
 }
 
 // ********************Board Meta Update Strategies********************
-export class UpdateEmeperorStrategy {
+export class UpdateEmperorStrategy {
   constructor() {
     // Initialize properties
     this.gridCOPY = [];

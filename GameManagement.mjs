@@ -14,12 +14,17 @@ import {
   FISHING_VILLAGE_POINTS
 } from "./Constants.mjs";
 
-//Manages turn switches and phase switches
-
-// A class to manage turns in the game
+/**
+ * TurnManager — Turn and phase management
+ *
+ * Refactored to eliminate Game/GameEngine dependencies. Turn calculation via
+ * changeTurn() is stateless (pure function of inputs). Maintains pending skip
+ * state for blockade turn-skip mechanics via scheduleSkip().
+ *
+ * No longer takes Game instance in constructor.
+ */
 export class TurnManager {
-  constructor(game) {
-    this.game = game;
+  constructor() {
     // Initialize the current turn to the first player
     this.currentTurn = 0;
     this.gamePhase = STARTING_PHASE;
@@ -27,147 +32,83 @@ export class TurnManager {
     this.lastSkippedPlayers = [];
   }
 
-  // Method to change turn
-  changeTurn(details) {
-    this.currentTurn++;
+  /**
+   * Advance turn to next player, processing any pending skips.
+   * Stateless: accepts current state, returns new state without mutations.
+   *
+   * @param {Object} state - Current state
+   * @param {string} state.currentPlayer - Current player ("p1" or "p2")
+   * @param {number} state.currentMapPieceIndex - Current map piece index
+   * @param {number} state.totalMapPieces - Total map pieces on board
+   * @param {Object} state.pendingSkips - Pending skips per player
+   * @param {number} state.currentTurn - Current turn number
+   * @returns {Object} New state with newPlayer, newMapPieceIndex, newTurn, skippedPlayers, newPendingSkips
+   */
+  changeTurn(state) {
+    const newTurn = state.currentTurn + 1;
 
-    details.setTurn(this.currentTurn);
     // Switch to the other player
-    this.game.currentPlayer =
-      this.game.currentPlayer === PLAYER_1 ? PLAYER_2 : PLAYER_1;
+    const newPlayer = state.currentPlayer === PLAYER_1 ? PLAYER_2 : PLAYER_1;
 
     // Increment the current map piece index but make sure to not go over the length of map pieces
-    this.game.currentMapPieceIndex = Math.min(
-      this.game.currentMapPieceIndex + 1,
-      this.game.gameBoard.getAllMapPieces().length - 1
+    const newMapPieceIndex = Math.min(
+      state.currentMapPieceIndex + 1,
+      state.totalMapPieces - 1
     );
 
-    this.lastSkippedPlayers = this.consumeSkipIfPending(details);
+    // Consume pending skips for the new player
+    const consumeResult = this.consumeSkipIfPending({
+      currentPlayer: newPlayer,
+      currentTurn: newTurn,
+      pendingSkips: { ...state.pendingSkips }
+    });
 
-    // Sync details with the actual current player after all swaps/skips
-    details.setCurrentPlayer(this.game.currentPlayer);
+    return {
+      newPlayer: consumeResult.finalPlayer,
+      newMapPieceIndex: newMapPieceIndex,
+      newTurn: consumeResult.finalTurn,
+      skippedPlayers: consumeResult.skippedPlayers,
+      newPendingSkips: consumeResult.finalPendingSkips
+    };
   }
 
-  checkPhase(details) {
+  checkPhase(currentTurn) {
     // If the current turn is the map phase threshold, change the game phase to stone phase
-    if (this.currentTurn === MAP_PHASE_TURNS_THRESHOLD) {
-      this.gamePhase = STONE_PHASE;
-      details.setGamePhase(STONE_PHASE);
+    if (currentTurn >= MAP_PHASE_TURNS_THRESHOLD && this.gamePhase !== STONE_PHASE) {
+      return STONE_PHASE;
     }
+    return this.gamePhase;
   }
 
   scheduleSkip(player) {
     this.pendingSkips[player]++;
   }
 
-  consumeSkipIfPending(details) {
+  // Stateless consume skip - accepts state and returns updated state
+  // Input: { currentPlayer, currentTurn, pendingSkips }
+  // Output: { skippedPlayers, finalPlayer, finalTurn, finalPendingSkips }
+  consumeSkipIfPending(state) {
     const skippedPlayers = [];
     const MAX_SKIP_ITERATIONS = 10; // Safety bound to prevent infinite loop
     let iterations = 0;
-    while (this.pendingSkips[this.game.currentPlayer] > 0 && iterations < MAX_SKIP_ITERATIONS) {
-      skippedPlayers.push(this.game.currentPlayer);
-      this.pendingSkips[this.game.currentPlayer]--;
-      this.currentTurn++;
-      details.setTurn(this.currentTurn);
-      this.game.currentPlayer =
-        this.game.currentPlayer === PLAYER_1 ? PLAYER_2 : PLAYER_1;
+    let currentPlayer = state.currentPlayer;
+    let currentTurn = state.currentTurn;
+    let pendingSkips = { ...state.pendingSkips };
+
+    while (pendingSkips[currentPlayer] > 0 && iterations < MAX_SKIP_ITERATIONS) {
+      skippedPlayers.push(currentPlayer);
+      pendingSkips[currentPlayer]--;
+      currentTurn++;
+      currentPlayer = currentPlayer === PLAYER_1 ? PLAYER_2 : PLAYER_1;
       iterations++;
     }
-    return skippedPlayers;
-  }
-}
-//A class to encapsulate our history states
-export class HistoryManager {
-  constructor() {
-    this.history = [];
-  }
-  //Method to add a state to the history
-  addState(state) {
-    this.history.push(state);
 
-    let lastTwoStatesComparisson = this.compareLastTwoStates();
-    if (lastTwoStatesComparisson === false) {
-      this.undo();
-    }
-  }
-  //Method to undo the last state
-  undo() {
-    this.history.pop();
-  }
-  //Method to get the last state
-  getLastState() {
-    return this.history[this.history.length - 1];
-  }
-  //Method to get the size of the history
-  getHistorySize() {
-    return this.history.length;
-  }
-  //Method to clear the history
-  clearHistory() {
-    this.history = [];
-  }
-
-  compareLastTwoStates() {
-    if (this.history.length < 2) {
-      return true;
-    }
-    const lastState = this.history[this.history.length - 1];
-    const secondLastState = this.history[this.history.length - 2];
-    if (!lastState || !secondLastState) {
-      return false;
-    }
-
-    let differences = [];
-    for (let i = 0; i < lastState.length; i++) {
-      for (let j = 0; j < lastState[i].length; j++) {
-        let diff = this.deepEqual(lastState[i][j], secondLastState[i][j]);
-        if (diff !== true) {
-          differences.push({ row: i, col: j, differences: diff });
-        }
-      }
-    }
-
-    return differences.length > 0 ? differences : false;
-  }
-
-  deepEqual(a, b, path = "") {
-    if (a === b) {
-      return true;
-    }
-
-    if (
-      typeof a !== "object" ||
-      a === null ||
-      typeof b !== "object" ||
-      b === null
-    ) {
-      return [{ path, newValue: a, oldValue: b }];
-    }
-
-    let newKeys = Object.keys(a),
-      oldKeys = Object.keys(b);
-
-    if (newKeys.length !== oldKeys.length) {
-      return [{ path, newKeys, oldKeys }];
-    }
-
-    let diffs = [];
-    for (let key of newKeys) {
-      if (!oldKeys.includes(key)) {
-        diffs.push({
-          path: `${path}.${key}`,
-          newValue: a[key],
-          oldValue: undefined,
-        });
-      } else {
-        let diff = this.deepEqual(a[key], b[key], `${path}.${key}`);
-        if (diff !== true) {
-          diffs = diffs.concat(diff);
-        }
-      }
-    }
-
-    return diffs.length > 0 ? diffs : true;
+    return {
+      skippedPlayers: skippedPlayers,
+      finalPlayer: currentPlayer,
+      finalTurn: currentTurn,
+      finalPendingSkips: pendingSkips
+    };
   }
 }
 
@@ -328,6 +269,7 @@ export class StrategyDetails {
     this.removalCoordinates = null;
     this.currentScores = null; // Add currentScores property
     this.currentFishingVillageState = null;
+    this.globalWarmingChanceTracker = null; // Add globalWarmingChanceTracker for DI
   }
   setCurrentPeninsulaState(currentPeninsulaState) {
     this.currentPeninsulaState = currentPeninsulaState;
@@ -364,6 +306,11 @@ export class StrategyDetails {
   }
   setCurrentFishingVillageState(currentFishingVillageState) {
     this.currentFishingVillageState = currentFishingVillageState;
+    return this;
+  }
+
+  setGlobalWarmingChanceTracker(globalWarmingChanceTracker) {
+    this.globalWarmingChanceTracker = globalWarmingChanceTracker;
     return this;
   }
 
