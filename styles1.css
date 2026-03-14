@@ -127,6 +127,11 @@ th[colspan="2"] {
   background-color: black;
   background-size: 130%;
   background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+  padding-bottom: 3px;
 }
 
 .row {
@@ -361,3 +366,59 @@ th[colspan="2"] {
 .autoplace-feedback.fade {
   opacity: 0;
 }
+
+/* Blockade cells */
+.cell.blockade {
+  background-color: #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  padding-bottom: 2px;
+}
+
+.cell.blockade-player1 {
+  border: 2px solid rgba(255, 255, 255, 0.6);
+}
+
+.cell.blockade-player1.lastPlayed {
+  border: 3px dashed rgba(255, 255, 255, 0.9);
+}
+
+.cell.blockade-player2 {
+  border: 2px solid rgba(139, 69, 19, 0.8);
+}
+
+.cell.blockade-player2.lastPlayed {
+  border: 3px dashed rgba(139, 69, 19, 1);
+}
+
+.cell.blockade-preview {
+  background-color: rgba(68, 68, 68, 0.5);
+}
+
+/* Skip notification toast */
+.skip-notification {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(255, 152, 0, 0.95);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  z-index: 2000;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.skip-notification.visible {
+  opacity: 1;
+}
+

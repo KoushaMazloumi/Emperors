@@ -10,6 +10,7 @@ import {
   PLAYER_2,
   CITY_LENGTH_THRESHOLD,
   MAP_PHASE,
+  BLOCKADE_TYPE,
 } from "./Constants.mjs";
 
 import { HistoryManager } from "./GameManagement.mjs";
@@ -250,6 +251,9 @@ export class PeninsulaFinder {
     return peninsulas;
   }
 
+  // Blockades (non-null cells on ocean tiles) naturally reduce a cell's null-neighbor
+  // count, which can prevent the 3-ocean-sides peninsula condition and thus protect
+  // tiles from global warming.
   findPeninsulas() {
     const peninsulas = [];
     const affectedMapPieces = [];
@@ -467,6 +471,8 @@ export class TradeRouteCounter {
           for (let k = i + 1; k < this.grid.length; k++) {
             if (this.grid[k][j] === null) {
               routeLength++;
+            } else if (this.grid[k][j].type === BLOCKADE_TYPE) {
+              break; // Blockade interrupts trade route
             } else if (
               this.grid[k][j].stoneOwner === player &&
               routeLength > 0
@@ -491,6 +497,8 @@ export class TradeRouteCounter {
           for (let k = j + 1; k < this.grid[i].length; k++) {
             if (this.grid[i][k] === null) {
               routeLength++;
+            } else if (this.grid[i][k].type === BLOCKADE_TYPE) {
+              break; // Blockade interrupts trade route
             } else if (
               this.grid[i][k].stoneOwner === player &&
               routeLength > 0
@@ -812,6 +820,51 @@ export class ValidateStonePlacementStrategy {
     }
   }
 }
+
+export class ValidateBlockadePlacementStrategy {
+  constructor() {
+    this.grid = null;
+    this.x = null;
+    this.y = null;
+    this.gamePhase = null;
+  }
+
+  performStrategy(moveValidator, details) {
+    this.grid = moveValidator.grid;
+    this.x = details.x;
+    this.y = details.y;
+    this.gamePhase = details.gamePhase;
+    return this.validateBlockadePlacement();
+  }
+
+  validateBlockadePlacement() {
+    // Must be in stone phase
+    if (this.gamePhase !== STONE_PHASE) return false;
+
+    // Bounds check
+    if (this.y < 0 || this.y >= this.grid.length || this.x < 0 || this.x >= this.grid[0].length) return false;
+
+    // Target cell must be null (ocean)
+    if (this.grid[this.y][this.x] !== null) return false;
+
+    // Must have at least 1 empty map piece cell remaining (game not over)
+    let hasEmptyMapCell = false;
+    for (let i = 0; i < this.grid.length; i++) {
+      for (let j = 0; j < this.grid[i].length; j++) {
+        const cell = this.grid[i][j];
+        if (cell !== null && cell.type === "mapPiece" && !cell.stoneOwner) {
+          hasEmptyMapCell = true;
+          break;
+        }
+      }
+      if (hasEmptyMapCell) break;
+    }
+    if (!hasEmptyMapCell) return false;
+
+    return true;
+  }
+}
+
 export class ValidateMapPiecePlacementStrategy {
   constructor() {
     this.grid = null;
@@ -1212,6 +1265,19 @@ export class GlobalWarmingEventHandlingStrategy {
   }
 }
 
+function clearGridFlags(grid) {
+  for (let i = 0; i < grid.length; i++) {
+    for (let j = 0; j < grid[i].length; j++) {
+      if (grid[i][j] !== null) {
+        grid[i][j].lastPlayed = false;
+        grid[i][j].isPartOfTradeRoute = false;
+        grid[i][j].isPartOfCity = false;
+        grid[i][j].isPartOfFishingVillage = false;
+      }
+    }
+  }
+}
+
 export class AddStoneStrategy {
   constructor() {
     // Initialize properties
@@ -1240,22 +1306,10 @@ export class AddStoneStrategy {
   giveUpdatedGrid() {
     return this.gridCOPY;
   }
-  clearFlags() {
-    for (let i = 0; i < this.gridCOPY.length; i++) {
-      for (let j = 0; j < this.gridCOPY[i].length; j++) {
-        if (this.gridCOPY[i][j] !== null) {
-          this.gridCOPY[i][j].lastPlayed = false;
-          this.gridCOPY[i][j].isPartOfTradeRoute = false; // Reset the trade route flag of the square
-          this.gridCOPY[i][j].isPartOfCity = false;
-          this.gridCOPY[i][j].isPartOfFishingVillage = false;
-        }
-      }
-    }
-  }
 
   // Method to add the stone to the game board
   addStone() {
-    this.clearFlags();
+    clearGridFlags(this.gridCOPY);
     const square = this.gridCOPY[this.y][this.x]; // Get the square where the stone is being added
 
     if (square && square.type === "mapPiece") {
@@ -1270,6 +1324,37 @@ export class AddStoneStrategy {
     }
   }
 }
+
+export class AddBlockadeStrategy {
+  constructor() {
+    this.gridCOPY = [];
+    this.x = null;
+    this.y = null;
+    this.player = null;
+  }
+
+  performStrategy(details) {
+    this.gridCOPY = details.currentGridCopyState;
+    this.player = details.currentPlayer;
+    this.x = details.x;
+    this.y = details.y;
+    this.addBlockade();
+  }
+
+  giveUpdatedGrid() {
+    return this.gridCOPY;
+  }
+
+  addBlockade() {
+    clearGridFlags(this.gridCOPY);
+    this.gridCOPY[this.y][this.x] = {
+      type: BLOCKADE_TYPE,
+      owner: this.player,
+      lastPlayed: true,
+    };
+  }
+}
+
 export class AddMapPieceStrategy {
   constructor() {
     // Initialize properties

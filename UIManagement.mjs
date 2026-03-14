@@ -11,7 +11,8 @@ import {
   TRADE_ROUTE_LENGTH_POINTS,
   CITY_POINTS,
   RESOURCE_POINTS,
-  FISHING_VILLAGE_POINTS
+  FISHING_VILLAGE_POINTS,
+  BLOCKADE_TYPE
 } from "./Constants.mjs";
 
 import { StrategyDetails } from "./GameManagement.mjs";
@@ -86,6 +87,7 @@ export class StatusRenderer {
       "label-population": `Population (${POPULATION_POINTS} pt)`,
       "label-resources": `Resources (${RESOURCE_POINTS} pt)`,
       "label-fishing-villages": `Fishing Villages (${FISHING_VILLAGE_POINTS} pt/shore)`,
+      "label-blockades": "Blockades",
     };
     for (const [className, text] of Object.entries(labels)) {
       document.querySelectorAll(`.${className}`).forEach((el) => {
@@ -125,9 +127,9 @@ export class StatusRenderer {
     // Update current player indicator
     const currentPlayerIndicator = document.getElementById("current-player");
     if (details.currentPlayer === PLAYER_1) {
-      currentPlayerIndicator.textContent = "Black";
-    } else if (details.currentPlayer === PLAYER_2) {
       currentPlayerIndicator.textContent = "White";
+    } else if (details.currentPlayer === PLAYER_2) {
+      currentPlayerIndicator.textContent = "Black";
     }
     // Update player city counts in the UI
     let player1CityCount = 0;
@@ -249,6 +251,25 @@ export class StatusRenderer {
     player1PopulationElement.textContent = `${player1Population}`;
     player2PopulationElement.textContent = `${player2Population}`;
 
+    // Update blockade counts in the UI
+    let p1Blockades = 0;
+    let p2Blockades = 0;
+    const grid = this.boardReference ? this.boardReference.getGrid() : null;
+    if (grid) {
+      for (let i = 0; i < grid.length; i++) {
+        for (let j = 0; j < grid[i].length; j++) {
+          if (grid[i][j] && grid[i][j].type === BLOCKADE_TYPE) {
+            if (grid[i][j].owner === PLAYER_1) p1Blockades++;
+            else if (grid[i][j].owner === PLAYER_2) p2Blockades++;
+          }
+        }
+      }
+    }
+    const p1BlockadesEl = document.getElementById("player1-blockades");
+    const p2BlockadesEl = document.getElementById("player2-blockades");
+    if (p1BlockadesEl) p1BlockadesEl.textContent = p1Blockades;
+    if (p2BlockadesEl) p2BlockadesEl.textContent = p2Blockades;
+
     // Update score display if scores are available
     if (details.currentScores) {
       const player1ScoreElement = document.getElementById("player1-score");
@@ -339,6 +360,14 @@ export class BoardRenderer {
           }
         } else if (cell && cell.type === "naturalResource") {
           cellElement.classList.add("resource");
+          cellElement.textContent = "\u{1F48E}";
+        } else if (cell && cell.type === BLOCKADE_TYPE) {
+          cellElement.classList.add("blockade");
+          cellElement.classList.add(cell.owner === PLAYER_1 ? "blockade-player1" : "blockade-player2");
+          if (cell.lastPlayed) {
+            cellElement.classList.add("lastPlayed");
+          }
+          cellElement.textContent = "\u2622\uFE0F";
         }
 
         // Mark water cells that are part of a fishing village lake
@@ -375,7 +404,15 @@ export class MovePreviewRenderer {
     if (this.gamePhase === MAP_PHASE) {
       this.renderMapPreview(this.cellElement, this.piece, this.preview);
     } else if (this.gamePhase === STONE_PHASE) {
-      this.renderStonePreview(this.cellElement, this.preview);
+      const row = parseInt(this.cellElement.dataset.row);
+      const col = parseInt(this.cellElement.dataset.col);
+      const blockadeEnabled = document.getElementById("checkBlockades")?.checked;
+      if (blockadeEnabled && row >= 0 && row < this.gridCOPY.length && col >= 0 && col < this.gridCOPY[0].length
+          && this.gridCOPY[row][col] === null) {
+        this.renderBlockadePreview(this.cellElement, this.preview);
+      } else {
+        this.renderStonePreview(this.cellElement, this.preview);
+      }
     }
   }
 
@@ -426,7 +463,7 @@ export class MovePreviewRenderer {
 
       // Get the square from the grid
       const square =
-        this.gridCOPY[cellElement.dataset.row][cellElement.dataset.col];
+        this.gridCOPY[parseInt(cellElement.dataset.row)][parseInt(cellElement.dataset.col)];
 
       // Add or remove the stone preview based on the preview flag and the square's state
       if (
@@ -447,6 +484,20 @@ export class MovePreviewRenderer {
           cellElement.removeChild(existingStonePreview);
         }
         cellElement.stonePreviewActive = false;
+      }
+    }
+  }
+
+  // Render the blockade preview
+  renderBlockadePreview(cellElement, preview) {
+    const row = parseInt(cellElement.dataset.row);
+    const col = parseInt(cellElement.dataset.col);
+    if (row >= 0 && row < this.gridCOPY.length && col >= 0 && col < this.gridCOPY[0].length) {
+      const square = this.gridCOPY[row][col];
+      if (preview && square === null) {
+        cellElement.classList.add("blockade-preview");
+      } else {
+        cellElement.classList.remove("blockade-preview");
       }
     }
   }
@@ -553,6 +604,7 @@ export class EventListener {  constructor(game, gameBoard) {
           });
       });
     }
+
   }
   handleRotate() {
     // Create a new StrategyDetails object with the necessary information
@@ -748,9 +800,17 @@ export class EventListener {  constructor(game, gameBoard) {
     if (this.game.turnManager.gamePhase === MAP_PHASE) {
       this.game.executeStrategy("placeMapPiece", details);
     } else if (this.game.turnManager.gamePhase === STONE_PHASE) {
-      this.game.executeStrategy("placeStone", details);
+      const grid = this.gameBoard.getGrid();
+      const cell = grid[row][col];
+      const checkBlockades = document.getElementById("checkBlockades");
+      const blockadeEnabled = checkBlockades ? checkBlockades.checked : false;
+      if (cell === null && blockadeEnabled) {
+        this.game.executeStrategy("placeBlockade", details);
+      } else {
+        this.game.executeStrategy("placeStone", details);
+      }
     }
-    
+
     // NEW: Update button state after click action
     this.updateAutoplaceButtonState();
     this.updateUndoButtonState();
@@ -845,4 +905,38 @@ export class EventListener {  constructor(game, gameBoard) {
       this.undoButton.classList.remove("disabled");
     }
   }
+
+}
+
+export function showSkipNotification(skippedPlayers) {
+  const playerNames = skippedPlayers.map(player =>
+    player === PLAYER_1 ? "White" : "Black"
+  );
+  const message = playerNames.length === 1
+    ? `${playerNames[0]}'s turn skipped (blockade penalty)`
+    : playerNames.join(", ") + "'s turns skipped (blockade penalty)";
+
+  const existingNotification = document.getElementById("skip-notification");
+  if (existingNotification && existingNotification.parentNode) {
+    existingNotification.parentNode.removeChild(existingNotification);
+  }
+
+  const notification = document.createElement("div");
+  notification.id = "skip-notification";
+  notification.className = "skip-notification";
+  notification.textContent = message;
+  document.body.appendChild(notification);
+
+  requestAnimationFrame(() => {
+    notification.classList.add("visible");
+  });
+
+  setTimeout(() => {
+    notification.classList.remove("visible");
+    setTimeout(() => {
+      if (notification.parentNode) {
+        document.body.removeChild(notification);
+      }
+    }, 300);
+  }, 2500);
 }

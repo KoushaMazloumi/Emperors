@@ -56,6 +56,10 @@
               <td id="player1-fishing-villages"></td>
             </tr>
             <tr>
+              <th class="label-blockades">Blockades</th>
+              <td id="player1-blockades"></td>
+            </tr>
+            <tr>
               <th colspan="2">Black</th>
             </tr>
             <tr>
@@ -85,6 +89,10 @@
             <tr>
               <th class="label-fishing-villages">Fishing Villages</th>
               <td id="player2-fishing-villages"></td>
+            </tr>
+            <tr>
+              <th class="label-blockades">Blockades</th>
+              <td id="player2-blockades"></td>
             </tr>
           </table>
         </div>
@@ -128,6 +136,10 @@
         <li>
           <input type="checkbox" id="checkFishingVillages" name="checkFishingVillages" value="true" checked>
           <label for="checkFishingVillages">Include Fishing Villages?</label>
+        </li>
+        <li>
+          <input type="checkbox" id="checkBlockades" name="checkBlockades" value="true" checked>
+          <label for="checkBlockades">Include Blockades?</label>
         </li>
       </ul>
     </div>
@@ -185,6 +197,13 @@
         <li>Cities consist of 3 or more stones of the same player in a vertical or horizontal line.</li>
         <li id="rule-city-pts">Players earn points by establishing a city.</li>
         <li id="rule-city-pts-note">The number of stones in the line does not affect the score.</li>
+      </ul>
+      <p><strong>Blockade:</strong></p>
+      <ul>
+        <li>A player may forgo 2 stone placements (current turn and next turn) to place a blockade on any ocean tile.</li>
+        <li>Blockades intercept trade routes by blocking the gap between ports.</li>
+        <li>Blockades placed on lake tiles can disrupt enclosed lake geometry, affecting fishing villages.</li>
+        <li>Blockades reduce adjacent ocean exposure, which can protect tiles from global warming.</li>
       </ul>
       <p>The player with the highest score when the map is fully occupied wins the game!</p>
     </div>

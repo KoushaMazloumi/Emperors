@@ -3,6 +3,7 @@ import {
   PIECE_SHAPE_SIZE,
   PIECE_COUNT,
   PLAYER_1,
+  PLAYER_2,
   MAX_UNDO,
 } from "./Constants.mjs";
 
@@ -37,6 +38,8 @@ import {
   GlobalWarmingEventHandlingStrategy,
   FishingVillageFinder,
   UpdateFishingVillageStrategy,
+  ValidateBlockadePlacementStrategy,
+  AddBlockadeStrategy,
 } from "./BoardManagement.mjs";
 import { MapPieceGenerator, MapPieceRotator } from "./MapPieces.mjs";
 import {
@@ -45,6 +48,7 @@ import {
   BoardRenderer,
   MovePreviewRenderer,
   EventListener,
+  showSkipNotification,
 } from "./UIManagement.mjs";
 
 //Main class that manages the overall game state
@@ -96,6 +100,8 @@ export class Game {
     this.scoreTracker = new ScoreTracker(); // Initialize ScoreTracker
     this.fishingVillageFinder = new FishingVillageFinder();
     this.updateFishingVillageStrategy = new UpdateFishingVillageStrategy();
+    this.validateBlockadePlacementStrategy = new ValidateBlockadePlacementStrategy();
+    this.addBlockadeStrategy = new AddBlockadeStrategy();
     this.undoStack = [];
   }
 
@@ -134,10 +140,34 @@ export class Game {
           // Change the turn
           this.turnManager.changeTurn(details);
 
+          // Show skip notifications if any turns were skipped (from prior blockade)
+          if (this.turnManager.lastSkippedPlayers && this.turnManager.lastSkippedPlayers.length > 0) {
+            showSkipNotification(this.turnManager.lastSkippedPlayers);
+          }
+
           //Update counts for various flags
           this.flagRoutine(details);
 
           //Render various parts of the game
+          this.renderRoutine(details);
+        }
+        break;
+
+      case "placeBlockade":
+        if (!this._getFeatureFlags().blockades) break;
+        this.moveValidator.setStrategy(this.validateBlockadePlacementStrategy);
+        if (this.moveValidator.performStrategy(details)) {
+          this._saveSnapshot();
+          this.gameBoardEditor.setStrategy(this.addBlockadeStrategy);
+          this.gameBoardEditor.performStrategy(details);
+          // Schedule skip BEFORE changeTurn — changeTurn swaps player, then consumeSkipIfPending auto-fires
+          this.turnManager.scheduleSkip(this.currentPlayer);
+          this.turnManager.changeTurn(details);
+          // Show skip notifications after turn change
+          if (this.turnManager.lastSkippedPlayers && this.turnManager.lastSkippedPlayers.length > 0) {
+            showSkipNotification(this.turnManager.lastSkippedPlayers);
+          }
+          this.flagRoutine(details);
           this.renderRoutine(details);
         }
         break;
@@ -282,6 +312,7 @@ export class Game {
       tradeRoutes: isEnabled("checkTradeRoutes"),
       cities: isEnabled("checkCities"),
       fishingVillages: isEnabled("checkFishingVillages"),
+      blockades: isEnabled("checkBlockades"),
     };
   }
 
@@ -370,6 +401,8 @@ export class Game {
     this.turnManager.gamePhase = snapshot.gamePhase;
     this.globalWarmingChanceTracker.removedPeninsulas = snapshot.gwTrackerPeninsulas;
     this.globalWarmingEventFinder.removedPeninsulas = snapshot.gwFinderPeninsulas;
+    this.turnManager.pendingSkips = snapshot.pendingSkips || { [PLAYER_1]: 0, [PLAYER_2]: 0 };
+    this.turnManager.lastSkippedPlayers = [];
     if (this.activePulses) {
       this.activePulses.clear();
     }
@@ -390,6 +423,7 @@ export class Game {
       gamePhase: this.turnManager.gamePhase,
       gwTrackerPeninsulas: JSON.parse(JSON.stringify(this.globalWarmingChanceTracker.removedPeninsulas)),
       gwFinderPeninsulas: JSON.parse(JSON.stringify(this.globalWarmingEventFinder.removedPeninsulas)),
+      pendingSkips: JSON.parse(JSON.stringify(this.turnManager.pendingSkips)),
     });
   }
 

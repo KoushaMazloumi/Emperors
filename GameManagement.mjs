@@ -23,6 +23,8 @@ export class TurnManager {
     // Initialize the current turn to the first player
     this.currentTurn = 0;
     this.gamePhase = STARTING_PHASE;
+    this.pendingSkips = { [PLAYER_1]: 0, [PLAYER_2]: 0 };
+    this.lastSkippedPlayers = [];
   }
 
   // Method to change turn
@@ -39,13 +41,39 @@ export class TurnManager {
       this.game.currentMapPieceIndex + 1,
       this.game.gameBoard.getAllMapPieces().length - 1
     );
+
+    this.lastSkippedPlayers = this.consumeSkipIfPending(details);
+
+    // Sync details with the actual current player after all swaps/skips
+    details.setCurrentPlayer(this.game.currentPlayer);
   }
+
   checkPhase(details) {
     // If the current turn is the map phase threshold, change the game phase to stone phase
     if (this.currentTurn === MAP_PHASE_TURNS_THRESHOLD) {
       this.gamePhase = STONE_PHASE;
       details.setGamePhase(STONE_PHASE);
     }
+  }
+
+  scheduleSkip(player) {
+    this.pendingSkips[player]++;
+  }
+
+  consumeSkipIfPending(details) {
+    const skippedPlayers = [];
+    const MAX_SKIP_ITERATIONS = 10; // Safety bound to prevent infinite loop
+    let iterations = 0;
+    while (this.pendingSkips[this.game.currentPlayer] > 0 && iterations < MAX_SKIP_ITERATIONS) {
+      skippedPlayers.push(this.game.currentPlayer);
+      this.pendingSkips[this.game.currentPlayer]--;
+      this.currentTurn++;
+      details.setTurn(this.currentTurn);
+      this.game.currentPlayer =
+        this.game.currentPlayer === PLAYER_1 ? PLAYER_2 : PLAYER_1;
+      iterations++;
+    }
+    return skippedPlayers;
   }
 }
 //A class to encapsulate our history states
@@ -266,14 +294,6 @@ export class ScoreTracker {
   }
 }
 
-//A class that stores the player information
-export class Player {
-  constructor() {
-    this.name = "";
-    this.score = 0;
-  }
-}
-
 //A class to centralize all console logs
 export class Logger {
   logGeneratedShapes(pieces) {
@@ -283,12 +303,6 @@ export class Logger {
       console.table(piece.shape);
     });
   }
-}
-
-//A class that will display info alerts when players try to break rules
-export class InfoAlert {
-  constructor() {}
-  toggleAlert() {}
 }
 
 export class StrategyDetails {
