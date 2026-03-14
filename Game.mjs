@@ -1,3 +1,20 @@
+/**
+ * ============================================================
+ * DEPRECATED — DO NOT USE IN NEW CODE
+ * ============================================================
+ * This file is the legacy monolithic Game class. It has been
+ * replaced by the following modular components:
+ *   - GameEngine.mjs      (pure game logic, no DOM)
+ *   - RendererAdapter.mjs  (DOM rendering bridge)
+ *   - InputHandler.mjs     (user input capture)
+ *   - NetworkManager.mjs   (multiplayer networking)
+ *   - MultiplayerUI.mjs    (multiplayer DOM controls)
+ *
+ * Kept temporarily for reference during migration validation.
+ * Remove this file once the new architecture is confirmed stable.
+ * ============================================================
+ */
+
 import {
   GRID_SIZE,
   PIECE_SHAPE_SIZE,
@@ -19,7 +36,7 @@ import {
   BoardStateSearcher,
   BoardStateEditor,
   EmperorCounter,
-  UpdateEmeperorStrategy,
+  UpdateEmperorStrategy,
   MoveValidator,
   ValidateMapPiecePlacementStrategy,
   ValidateStonePlacementStrategy,
@@ -51,7 +68,18 @@ import {
   showSkipNotification,
 } from "./UIManagement.mjs";
 
-//Main class that manages the overall game state
+/**
+ * Game — Legacy orchestrator (deprecated in favor of GameEngine)
+ *
+ * Manages overall game state using the Strategy pattern. Now integrated with
+ * new DOM-free GameEngine architecture but retained for backward compatibility
+ * during refactoring.
+ *
+ * WARNING: This class is being phased out. New game logic should use GameEngine.
+ * Existing code paths: EventListener still routes to Game.executeStrategy().
+ *
+ * @deprecated Use GameEngine, RendererAdapter, InputHandler, NetworkManager, and MultiplayerUI instead.
+ */
 export class Game {
   constructor() {
     this.strategy = null;
@@ -80,9 +108,9 @@ export class Game {
     this.addMapPieceStrategy = new AddMapPieceStrategy();
     this.addStoneStrategy = new AddStoneStrategy();
     this.emperorCounter = new EmperorCounter();
-    this.updateEmeperorStrategy = new UpdateEmeperorStrategy();
+    this.updateEmperorStrategy = new UpdateEmperorStrategy();
     this.updateTradeRouteStrategy = new UpdateTradeRouteStrategy();
-    this.turnManager = new TurnManager(this);
+    this.turnManager = new TurnManager();
     this.tradeRouteCounter = new TradeRouteCounter();
     this.peninsulaFinder = new PeninsulaFinder();
     this.cityFinder = new CityFinder();
@@ -94,7 +122,7 @@ export class Game {
       new ValidateMapPieceRotationStrategy();
     this.resourceCounter = new ResourceCounter();
     this.globalWarmingChanceTracker = new GlobalWarmingChanceTracker();
-    this.globalWarmingEventFinder = new GlobalWarmingEventFinder(this);
+    this.globalWarmingEventFinder = new GlobalWarmingEventFinder();
     this.globalWarmingEventHandlingStrategy =
       new GlobalWarmingEventHandlingStrategy();
     this.scoreTracker = new ScoreTracker(); // Initialize ScoreTracker
@@ -103,6 +131,33 @@ export class Game {
     this.validateBlockadePlacementStrategy = new ValidateBlockadePlacementStrategy();
     this.addBlockadeStrategy = new AddBlockadeStrategy();
     this.undoStack = [];
+  }
+
+  /**
+   * Apply turn state changes from TurnManager to both Game instance and StrategyDetails.
+   *
+   * TurnManager.changeTurn() is now stateless and returns a turnResult object.
+   * This helper distributes the results to Game's mutable state and to details for rendering.
+   *
+   * @param {Object} turnResult - Return value from TurnManager.changeTurn()
+   * @param {string} turnResult.newPlayer - The player whose turn it now is
+   * @param {number} turnResult.newMapPieceIndex - Updated map piece index
+   * @param {number} turnResult.newTurn - Updated turn count
+   * @param {Object} turnResult.newPendingSkips - Updated pending skip counts
+   * @param {Array} turnResult.skippedPlayers - Array of players who were skipped
+   * @param {StrategyDetails} details - The details object to update for rendering
+   */
+  _applyTurnChanges(turnResult, details) {
+    this.currentPlayer = turnResult.newPlayer;
+    this.currentMapPieceIndex = turnResult.newMapPieceIndex;
+    this.turnManager.currentTurn = turnResult.newTurn;
+    this.turnManager.pendingSkips = turnResult.newPendingSkips;
+    this.turnManager.lastSkippedPlayers = turnResult.skippedPlayers;
+
+    // Update details with new state for rendering pipeline
+    details.setTurn(turnResult.newTurn);
+    details.setCurrentPlayer(turnResult.newPlayer);
+    details.setCurrentMapPieceIndex(turnResult.newMapPieceIndex);
   }
 
   // Method to execute a strategy based on the given action and details
@@ -118,10 +173,21 @@ export class Game {
 
           this.gameBoardEditor.performStrategy(details);
           // Change the turn and render the board
-          this.turnManager.changeTurn(details);
+          const turnResult = this.turnManager.changeTurn({
+            currentPlayer: this.currentPlayer,
+            currentMapPieceIndex: this.currentMapPieceIndex,
+            totalMapPieces: this.gameBoard.getAllMapPieces().length,
+            pendingSkips: this.turnManager.pendingSkips,
+            currentTurn: this.turnManager.currentTurn
+          });
+          this._applyTurnChanges(turnResult, details);
 
           // If the current turn is the map phase threshold, change the game phase to stone phase
-          this.turnManager.checkPhase(details);
+          const newPhase = this.turnManager.checkPhase(this.turnManager.currentTurn);
+          if (newPhase !== this.turnManager.gamePhase) {
+            this.turnManager.gamePhase = newPhase;
+            details.setGamePhase(newPhase);
+          }
           //Render various parts of the game
           this.renderRoutine(details);
         }
@@ -138,11 +204,18 @@ export class Game {
           this.gameBoardEditor.performStrategy(details);
 
           // Change the turn
-          this.turnManager.changeTurn(details);
+          const turnResult = this.turnManager.changeTurn({
+            currentPlayer: this.currentPlayer,
+            currentMapPieceIndex: this.currentMapPieceIndex,
+            totalMapPieces: this.gameBoard.getAllMapPieces().length,
+            pendingSkips: this.turnManager.pendingSkips,
+            currentTurn: this.turnManager.currentTurn
+          });
+          this._applyTurnChanges(turnResult, details);
 
           // Show skip notifications if any turns were skipped (from prior blockade)
-          if (this.turnManager.lastSkippedPlayers && this.turnManager.lastSkippedPlayers.length > 0) {
-            showSkipNotification(this.turnManager.lastSkippedPlayers);
+          if (turnResult.skippedPlayers && turnResult.skippedPlayers.length > 0) {
+            showSkipNotification(turnResult.skippedPlayers);
           }
 
           //Update counts for various flags
@@ -162,10 +235,17 @@ export class Game {
           this.gameBoardEditor.performStrategy(details);
           // Schedule skip BEFORE changeTurn — changeTurn swaps player, then consumeSkipIfPending auto-fires
           this.turnManager.scheduleSkip(this.currentPlayer);
-          this.turnManager.changeTurn(details);
+          const turnResult = this.turnManager.changeTurn({
+            currentPlayer: this.currentPlayer,
+            currentMapPieceIndex: this.currentMapPieceIndex,
+            totalMapPieces: this.gameBoard.getAllMapPieces().length,
+            pendingSkips: this.turnManager.pendingSkips,
+            currentTurn: this.turnManager.currentTurn
+          });
+          this._applyTurnChanges(turnResult, details);
           // Show skip notifications after turn change
-          if (this.turnManager.lastSkippedPlayers && this.turnManager.lastSkippedPlayers.length > 0) {
-            showSkipNotification(this.turnManager.lastSkippedPlayers);
+          if (turnResult.skippedPlayers && turnResult.skippedPlayers.length > 0) {
+            showSkipNotification(turnResult.skippedPlayers);
           }
           this.flagRoutine(details);
           this.renderRoutine(details);
@@ -235,6 +315,9 @@ export class Game {
         this.globalWarmingChanceTracker.calculateChance(details)
       );
 
+      // Pass globalWarmingChanceTracker via details for DI
+      details.setGlobalWarmingChanceTracker(this.globalWarmingChanceTracker);
+
       this.gameBoardSearcher.setStrategy(this.globalWarmingEventFinder);
       details.setRemovalCoordinates(
         this.gameBoardSearcher.performStrategy(details)
@@ -251,7 +334,7 @@ export class Game {
     this.gameBoardSearcher.setStrategy(this.emperorCounter);
     details.setCurrentEmperorState(this.gameBoardSearcher.performStrategy());
 
-    this.gameBoardEditor.setStrategy(this.updateEmeperorStrategy);
+    this.gameBoardEditor.setStrategy(this.updateEmperorStrategy);
     this.gameBoardEditor.performStrategy(details);
 
     const flags = this._getFeatureFlags();
@@ -504,8 +587,20 @@ export class Game {
             // Execute the normal placement flow
             this.gameBoardEditor.setStrategy(this.addMapPieceStrategy);
             this.gameBoardEditor.performStrategy(details);
-            this.turnManager.changeTurn(details);
-            this.turnManager.checkPhase(details);
+            const turnResult = this.turnManager.changeTurn({
+              currentPlayer: this.currentPlayer,
+              currentMapPieceIndex: this.currentMapPieceIndex,
+              totalMapPieces: this.gameBoard.getAllMapPieces().length,
+              pendingSkips: this.turnManager.pendingSkips,
+              currentTurn: this.turnManager.currentTurn
+            });
+            this._applyTurnChanges(turnResult, details);
+
+            const newPhase = this.turnManager.checkPhase(this.turnManager.currentTurn);
+            if (newPhase !== this.turnManager.gamePhase) {
+              this.turnManager.gamePhase = newPhase;
+              details.setGamePhase(newPhase);
+            }
             this.renderRoutine(details);
             
             success = true;
