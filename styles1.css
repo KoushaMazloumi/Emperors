@@ -478,3 +478,199 @@ th[colspan="2"] {
   opacity: 1;
 }
 
+/* Multiplayer Controls Section */
+#multiplayer-controls {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#multiplayer-controls h3 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+/* Connection Status Indicator */
+#connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.multiplayer-status-disconnected {
+  background-color: #ffcccc;
+  color: #cc0000;
+}
+
+.multiplayer-status-disconnected .status-dot {
+  background-color: #cc0000;
+}
+
+.multiplayer-status-connecting {
+  background-color: #ffffcc;
+  color: #cc8800;
+}
+
+.multiplayer-status-connecting .status-dot {
+  background-color: #ccaa00;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.multiplayer-status-connected {
+  background-color: #ccffcc;
+  color: #00aa00;
+}
+
+.multiplayer-status-connected .status-dot {
+  background-color: #00aa00;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Player Role Display */
+#player-role-display {
+  display: none;
+  margin-top: 10px;
+  padding: 6px 12px;
+  background-color: #e8f4f8;
+  border-left: 3px solid #2196F3;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #0277BD;
+  font-weight: 500;
+}
+
+/* Room Code Display */
+#room-code-display {
+  display: none;
+  margin-top: 15px;
+  background-color: white;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+#room-code-display p {
+  margin: 0 0 5px 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.room-code-hint {
+  margin: 5px 0 0 0;
+}
+
+#room-code-value {
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 8px 12px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  text-align: center;
+  user-select: all;
+  border-radius: 4px;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+#room-code-value:hover {
+  background-color: #e8e8e8;
+  border-color: #999;
+}
+
+#room-code-value:active {
+  background-color: #d9d9d9;
+}
+
+/* Multiplayer Action Buttons */
+.multiplayer-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s, opacity 0.3s;
+  color: white;
+}
+
+#create-room-button, #join-room-button {
+  background-color: #2196F3;
+}
+
+#create-room-button:hover, #join-room-button:hover {
+  background-color: #1976D2;
+}
+
+#create-room-button:disabled, #join-room-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Multiplayer Actions Layout */
+#multiplayer-actions {
+  margin-top: 15px;
+}
+
+.join-room-row {
+  margin-top: 10px;
+}
+
+#disconnect-button {
+  display: none;
+  margin-top: 10px;
+  background-color: #f44336;
+}
+
+#disconnect-button:hover {
+  background-color: #d32f2f;
+}
+
+/* Join Room Input Field */
+#join-room-input {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 140px;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  text-transform: uppercase;
+}
+
+#join-room-button {
+  margin-left: 5px;
+}
+
+#join-room-input:focus {
+  outline: none;
+  border-color: #2196F3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+}
+
+#join-room-input:disabled {
+  background-color: #f0f0f0;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+

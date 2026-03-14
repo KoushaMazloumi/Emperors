@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <title>My Game</title>
     <!-- <script src="game.js"></script>-->
-        <script type="module" src="main.mjs"></script>
+    <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js" integrity="sha384-x0YgkOr/3UOZP2CRDxGW9e0Q+2Qjyr3uJrm4xU32Y7ZCNAo7Cc7bjhrZMi/dwczu" crossorigin="anonymous"></script>
+    <script type="module" src="main.mjs"></script>
     <link rel="stylesheet" href="./styles1.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css" integrity="sha384-aQuvIWWIbpu/mSqULLDiUveyYiPoJzPKAWjUmGJ+Elm+N/LJhzfZqsutsfw870JS" crossorigin="anonymous">
   </head>
@@ -156,7 +157,36 @@
         </li>
       </ul>
     </div>
+
+    <!-- Multiplayer Controls Section -->
+    <div id="multiplayer-controls">
+      <h3>Multiplayer</h3>
+      <div id="connection-status-section">
+        <div id="connection-status" class="multiplayer-status-disconnected">
+          <span class="status-dot"></span>
+          <span id="connection-status-text">Disconnected</span>
+        </div>
+        <div id="player-role-display"></div>
+      </div>
+
+      <div id="room-code-display">
+        <p>Room Code:</p>
+        <div id="room-code-value" title="Click to copy">
+          —
+        </div>
+        <p class="room-code-hint">Click to copy</p>
+      </div>
+
+      <div id="multiplayer-actions">
+        <button id="create-room-button" class="multiplayer-button">Create Room</button>
+        <div class="join-room-row">
+          <input type="text" id="join-room-input" placeholder="Enter room code" />
+          <button id="join-room-button" class="multiplayer-button">Join</button>
+        </div>
+        <button id="disconnect-button" class="multiplayer-button">Disconnect</button>
+      </div>
     </div>
+
     <div id="theRules">
       <h2>The Objective</h2>
       <p>
@@ -219,8 +249,6 @@
         <li>Blockades reduce adjacent ocean exposure, which can protect tiles from global warming.</li>
       </ul>
       <p>The player with the highest score when the map is fully occupied wins the game!</p>
-    </div>
-    
     </div>
   </body>
 </html>
