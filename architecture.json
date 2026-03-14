@@ -1,0 +1,110 @@
+{
+  "layers": {
+    "constants": {
+      "paths": ["Constants.mjs", "Countries.mjs"],
+      "description": "Game constants, configuration, and static data. No dependencies on other layers."
+    },
+    "domain": {
+      "paths": ["BoardManagement.mjs", "MapPieces.mjs"],
+      "description": "Core game logic, board state, move validation, scoring calculations. Owns all business rules."
+    },
+    "application": {
+      "paths": ["GameManagement.mjs", "Game.mjs"],
+      "description": "Game orchestration, turn management, strategy dispatch, undo/redo. Coordinates between domain and UI."
+    },
+    "presentation": {
+      "paths": ["UIManagement.mjs"],
+      "description": "Rendering, event handling, DOM manipulation, feature flag reading."
+    },
+    "bootstrap": {
+      "paths": ["main.mjs", "index.html"],
+      "description": "Entry points and HTML structure. Initialize game on page load."
+    }
+  },
+  "rules": [
+    {
+      "from": "constants",
+      "to": "*",
+      "allow": false,
+      "message": "Constants layer has no outbound dependencies (it is imported by all)"
+    },
+    {
+      "from": "domain",
+      "to": "constants",
+      "allow": true,
+      "rationale": "Domain layer uses constants for game rules"
+    },
+    {
+      "from": "domain",
+      "to": "domain",
+      "allow": true,
+      "rationale": "Internal domain module imports allowed"
+    },
+    {
+      "from": "domain",
+      "to": "application",
+      "allow": false,
+      "message": "Domain must not depend on Application layer (core logic must be independent)"
+    },
+    {
+      "from": "domain",
+      "to": "presentation",
+      "allow": false,
+      "message": "Domain must not depend on Presentation layer (core logic must be UI-agnostic)"
+    },
+    {
+      "from": "application",
+      "to": "constants",
+      "allow": true,
+      "rationale": "Application uses constants for game rules"
+    },
+    {
+      "from": "application",
+      "to": "domain",
+      "allow": true,
+      "rationale": "Application orchestrates domain logic and board state"
+    },
+    {
+      "from": "application",
+      "to": "application",
+      "allow": true,
+      "rationale": "Internal application module imports allowed"
+    },
+    {
+      "from": "application",
+      "to": "presentation",
+      "allow": true,
+      "rationale": "Application imports presentation strategies (BoardRenderer, StatusRenderer, etc.) to configure the strategy pattern. Ideally decoupled via dependency injection, but currently acceptable."
+    },
+    {
+      "from": "presentation",
+      "to": "constants",
+      "allow": true,
+      "rationale": "Presentation uses constants for rendering configuration"
+    },
+    {
+      "from": "presentation",
+      "to": "domain",
+      "allow": true,
+      "rationale": "Presentation reads domain state for display (read-only access through public methods)"
+    },
+    {
+      "from": "presentation",
+      "to": "application",
+      "allow": true,
+      "rationale": "Presentation calls game.executeStrategy() to dispatch user actions"
+    },
+    {
+      "from": "presentation",
+      "to": "presentation",
+      "allow": true,
+      "rationale": "Internal presentation module imports allowed"
+    },
+    {
+      "from": "bootstrap",
+      "to": "*",
+      "allow": true,
+      "rationale": "Bootstrap can import all layers for initialization"
+    }
+  ]
+}

@@ -14,8 +14,68 @@ import {
   FISHING_VILLAGE_POINTS,
   BLOCKADE_TYPE
 } from "./Constants.mjs";
-
+import { COUNTRIES } from "./Countries.mjs";
 import { StrategyDetails } from "./GameManagement.mjs";
+
+let cachedFlags = { p1: null, p2: null, p1Name: null, p2Name: null };
+
+function updateCachedFlags() {
+  const p1Select = document.getElementById("player1-flag");
+  const p2Select = document.getElementById("player2-flag");
+  const p1Code = p1Select ? p1Select.value : "";
+  const p2Code = p2Select ? p2Select.value : "";
+  const p1Name = (p1Select && p1Select.value) ? p1Select.options[p1Select.selectedIndex].text : "";
+  const p2Name = (p2Select && p2Select.value) ? p2Select.options[p2Select.selectedIndex].text : "";
+  cachedFlags = {
+    p1: p1Code || null,
+    p2: p2Code || null,
+    p1Name: p1Name || null,
+    p2Name: p2Name || null,
+  };
+}
+
+export function getPlayerFlags() {
+  return cachedFlags;
+}
+
+export function initFlagSelectors(game) {
+  const p1Select = document.getElementById("player1-flag");
+  const p2Select = document.getElementById("player2-flag");
+  if (!p1Select || !p2Select) return;
+
+  // Clear existing country options (keep the first default option) to avoid duplicates on re-init
+  while (p1Select.options.length > 1) p1Select.remove(1);
+  while (p2Select.options.length > 1) p2Select.remove(1);
+
+  COUNTRIES.forEach(country => {
+    p1Select.appendChild(new Option(country.name, country.code));
+    p2Select.appendChild(new Option(country.name, country.code));
+  });
+
+  const syncDropdowns = () => {
+    const p1Val = p1Select.value;
+    const p2Val = p2Select.value;
+    Array.from(p1Select.options).forEach(opt => { opt.disabled = false; });
+    Array.from(p2Select.options).forEach(opt => { opt.disabled = false; });
+    if (p1Val) {
+      const p2Opt = p2Select.querySelector(`option[value="${CSS.escape(p1Val)}"]`);
+      if (p2Opt) p2Opt.disabled = true;
+    }
+    if (p2Val) {
+      const p1Opt = p1Select.querySelector(`option[value="${CSS.escape(p2Val)}"]`);
+      if (p1Opt) p1Opt.disabled = true;
+    }
+  };
+
+  const rerender = () => {
+    syncDropdowns();
+    updateCachedFlags();
+    game.refreshDisplay();
+  };
+
+  p1Select.addEventListener("change", rerender);
+  p2Select.addEventListener("change", rerender);
+}
 
 //A class that manages the different aspects of rendering
 export class RenderManager {
@@ -125,12 +185,19 @@ export class StatusRenderer {
     phaseIndicator.textContent = `${details.gamePhase}`;
 
     // Update current player indicator
+    const playerFlags = getPlayerFlags();
     const currentPlayerIndicator = document.getElementById("current-player");
     if (details.currentPlayer === PLAYER_1) {
-      currentPlayerIndicator.textContent = "White";
+      currentPlayerIndicator.textContent = playerFlags.p1Name || "White";
     } else if (details.currentPlayer === PLAYER_2) {
-      currentPlayerIndicator.textContent = "Black";
+      currentPlayerIndicator.textContent = playerFlags.p2Name || "Black";
     }
+
+    // Update player header labels
+    const p1Header = document.getElementById("player1-header");
+    const p2Header = document.getElementById("player2-header");
+    if (p1Header) p1Header.textContent = playerFlags.p1Name || "White";
+    if (p2Header) p2Header.textContent = playerFlags.p2Name || "Black";
     // Update player city counts in the UI
     let player1CityCount = 0;
     let player2CityCount = 0;
@@ -304,6 +371,7 @@ export class BoardRenderer {
     if (!this.boardReference) {
       return;
     }
+    const playerFlags = getPlayerFlags();
     // Build set of fishing village lake cells for fast lookup
     let fishingVillageLakeCellSet = null;
     if (this.details && this.details.currentFishingVillageState) {
@@ -353,8 +421,20 @@ export class BoardRenderer {
             }
             if (cell.stoneOwner === PLAYER_1) {
               permanentStone.classList.add("stone-player1");
+              if (playerFlags.p1) {
+                permanentStone.classList.add("stone-flag");
+                const flagIcon = document.createElement("span");
+                flagIcon.className = `fi fi-${playerFlags.p1} fis stone-flag-icon`;
+                permanentStone.appendChild(flagIcon);
+              }
             } else if (cell.stoneOwner === PLAYER_2) {
               permanentStone.classList.add("stone-player2");
+              if (playerFlags.p2) {
+                permanentStone.classList.add("stone-flag");
+                const flagIcon = document.createElement("span");
+                flagIcon.className = `fi fi-${playerFlags.p2} fis stone-flag-icon`;
+                permanentStone.appendChild(flagIcon);
+              }
             }
             cellElement.appendChild(permanentStone);
           }
@@ -394,6 +474,7 @@ export class MovePreviewRenderer {
     this.piece = details.piece;
     this.preview = details.toggleFlag;
     this.gamePhase = details.gamePhase;
+    this.currentPlayer = details.currentPlayer;
     this.boardReference = renderer.getBoard();
     // Get the grid from the board reference
     this.gridCOPY = this.boardReference.getGrid();
@@ -476,6 +557,14 @@ export class MovePreviewRenderer {
         const stonePreview = document.createElement("div");
         stonePreview.classList.add("stone-preview");
         stonePreview.classList.add("stone");
+        const previewFlags = getPlayerFlags();
+        const flagCode = this.currentPlayer === PLAYER_1 ? previewFlags.p1 : previewFlags.p2;
+        if (flagCode) {
+          stonePreview.classList.add("stone-flag");
+          const flagIcon = document.createElement("span");
+          flagIcon.className = `fi fi-${flagCode} fis stone-flag-icon`;
+          stonePreview.appendChild(flagIcon);
+        }
         cellElement.appendChild(stonePreview);
         cellElement.stonePreviewActive = true;
       } else if (!preview && cellElement.stonePreviewActive) {
@@ -746,6 +835,7 @@ export class EventListener {  constructor(game, gameBoard) {
       .setY(row)
       .setToggleFlag(true)
       .setCurrentMapPieceIndex(this.game.currentMapPieceIndex)
+      .setCurrentPlayer(this.game.currentPlayer)
       .build();
 
     // Execute the renderMovePreview strategy with the details object
@@ -771,6 +861,7 @@ export class EventListener {  constructor(game, gameBoard) {
       .setX(col)
       .setY(row)
       .setToggleFlag(false)
+      .setCurrentPlayer(this.game.currentPlayer)
       .build();
 
     // Execute the renderMovePreview strategy with the details object
@@ -909,8 +1000,9 @@ export class EventListener {  constructor(game, gameBoard) {
 }
 
 export function showSkipNotification(skippedPlayers) {
+  const flags = getPlayerFlags();
   const playerNames = skippedPlayers.map(player =>
-    player === PLAYER_1 ? "White" : "Black"
+    player === PLAYER_1 ? (flags.p1Name || "White") : (flags.p2Name || "Black")
   );
   const message = playerNames.length === 1
     ? `${playerNames[0]}'s turn skipped (blockade penalty)`

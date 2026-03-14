@@ -757,6 +757,16 @@ export class Game {
     this.statusRenderStrategy._ensureLabelsInitialized();
   }
 
+  refreshDisplay() {
+    const details = new StrategyDetails()
+      .setGamePhase(this.turnManager.gamePhase)
+      .setTurn(this.turnManager.currentTurn)
+      .setCurrentPlayer(this.currentPlayer)
+      .build();
+    this._recalculateDisplayData(details);
+    this.renderRoutine(details);
+  }
+
   // Method to start the game
   start() {
     // Implementation here...

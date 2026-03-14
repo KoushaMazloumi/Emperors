@@ -6,6 +6,7 @@
     <!-- <script src="game.js"></script>-->
         <script type="module" src="main.mjs"></script>
     <link rel="stylesheet" href="./styles1.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css" integrity="sha384-aQuvIWWIbpu/mSqULLDiUveyYiPoJzPKAWjUmGJ+Elm+N/LJhzfZqsutsfw870JS" crossorigin="anonymous">
   </head>
   <body>
     <div id="top-section">
@@ -25,7 +26,7 @@
               <td id="current-player"></td>
             </tr>
             <tr>
-              <th colspan="2">White</th>
+              <th colspan="2" id="player1-header">White</th>
             </tr>
             <tr>
               <th>Score</th>
@@ -60,7 +61,7 @@
               <td id="player1-blockades"></td>
             </tr>
             <tr>
-              <th colspan="2">Black</th>
+              <th colspan="2" id="player2-header">Black</th>
             </tr>
             <tr>
               <th>Score</th>
@@ -140,6 +141,18 @@
         <li>
           <input type="checkbox" id="checkBlockades" name="checkBlockades" value="true" checked>
           <label for="checkBlockades">Include Blockades?</label>
+        </li>
+        <li>
+          <label for="player1-flag">Player 1 Flag:</label>
+          <select id="player1-flag">
+            <option value="">White (default)</option>
+          </select>
+        </li>
+        <li>
+          <label for="player2-flag">Player 2 Flag:</label>
+          <select id="player2-flag">
+            <option value="">Black (default)</option>
+          </select>
         </li>
       </ul>
     </div>
