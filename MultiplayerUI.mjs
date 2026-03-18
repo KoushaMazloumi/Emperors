@@ -193,6 +193,7 @@ export default class MultiplayerUI {
       this._showRoomCodeDisplay(roomCode);
       this._assignedPlayer = "p1"; // Host is always player 1
       this._updatePlayerRoleDisplay("p1");
+      this._currentPlayer = "p1";
       // Wire InputHandler to route guest moves through network
       if (this.inputHandler) {
         this.inputHandler.setMultiplayerRole("host", this.networkManager);
@@ -421,9 +422,15 @@ export default class MultiplayerUI {
   _updateInputHandlerState() {
     if (!this.inputHandler) return;
 
-    // Host is always able to input (host runs the game)
+    // Host: only allow input during host's turn
     if (this.networkManager.isHost) {
-      this.inputHandler.enable();
+      if (this._currentPlayer === "p1") {
+        this.inputHandler.enable();
+        this._updateDisabledIndicator(false);
+      } else {
+        this.inputHandler.disable();
+        this._updateDisabledIndicator(true);
+      }
       return;
     }
 

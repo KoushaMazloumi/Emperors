@@ -196,6 +196,12 @@ export default class InputHandler {
   handleGridClick(cellElement) {
     if (this.isProcessing || this.isDisabled) return;
 
+    // Defense-in-depth: host cannot act during guest's turn
+    if (this.multiplayerRole === 'host') {
+      const currentPlayer = this.gameEngine.getCurrentPlayer();
+      if (currentPlayer !== 'p1') return;
+    }
+
     const row = parseInt(cellElement.dataset.row);
     const col = parseInt(cellElement.dataset.col);
 
