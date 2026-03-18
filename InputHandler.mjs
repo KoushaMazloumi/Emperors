@@ -181,6 +181,11 @@ export default class InputHandler {
     checkboxes.forEach((checkbox) => {
       if (checkbox) {
         checkbox.addEventListener("change", () => {
+          if (this.isDisabled) return;
+          if (this.multiplayerRole === 'host') {
+            const currentPlayer = this.gameEngine.getCurrentPlayer();
+            if (currentPlayer !== 'p1') return;
+          }
           this.syncFeatureFlagsToEngine();
         });
       }
@@ -306,6 +311,12 @@ export default class InputHandler {
   handleRotate() {
     if (this.isProcessing || this.isDisabled || this.rotateButton?.disabled) return;
 
+    // Defense-in-depth: host cannot act during guest's turn
+    if (this.multiplayerRole === 'host') {
+      const currentPlayer = this.gameEngine.getCurrentPlayer();
+      if (currentPlayer !== 'p1') return;
+    }
+
     if (this.multiplayerRole === 'guest') {
       // Guest: send move request to host
       this.networkManager.sendMoveRequest('rotate', {});
@@ -322,6 +333,12 @@ export default class InputHandler {
   handleUndo() {
     if (this.isProcessing || this.isDisabled || this.undoButton?.disabled) return;
 
+    // Defense-in-depth: host cannot act during guest's turn
+    if (this.multiplayerRole === 'host') {
+      const currentPlayer = this.gameEngine.getCurrentPlayer();
+      if (currentPlayer !== 'p1') return;
+    }
+
     if (this.multiplayerRole === 'guest') {
       // Guest: send move request to host
       this.networkManager.sendMoveRequest('undo', {});
@@ -337,6 +354,12 @@ export default class InputHandler {
    */
   handleAutoplace() {
     if (this.isProcessing || this.isDisabled || this.autoplaceButton?.disabled) return;
+
+    // Defense-in-depth: host cannot act during guest's turn
+    if (this.multiplayerRole === 'host') {
+      const currentPlayer = this.gameEngine.getCurrentPlayer();
+      if (currentPlayer !== 'p1') return;
+    }
 
     if (this.multiplayerRole === 'guest') {
       // Guest: send move request to host
@@ -362,6 +385,12 @@ export default class InputHandler {
    */
   handleAutoplaceAll() {
     if (this.isProcessing || this.isDisabled || this.autoplaceAllButton?.disabled) return;
+
+    // Defense-in-depth: host cannot act during guest's turn
+    if (this.multiplayerRole === 'host') {
+      const currentPlayer = this.gameEngine.getCurrentPlayer();
+      if (currentPlayer !== 'p1') return;
+    }
 
     if (this.multiplayerRole === 'guest') {
       // Guest: send move request to host
@@ -523,6 +552,11 @@ export default class InputHandler {
     }
     // Update button states based on game state (respects game phase constraints)
     this.updateButtonStates();
+    // Enable checkboxes
+    [this.checkGlobalWarming, this.checkTradeRoutes, this.checkCities,
+     this.checkFishingVillages, this.checkBlockades].forEach(cb => {
+      if (cb) cb.disabled = false;
+    });
   }
 
   /**
@@ -541,5 +575,10 @@ export default class InputHandler {
     if (this.undoButton) this.undoButton.disabled = true;
     if (this.autoplaceButton) this.autoplaceButton.disabled = true;
     if (this.autoplaceAllButton) this.autoplaceAllButton.disabled = true;
+    // Disable checkboxes
+    [this.checkGlobalWarming, this.checkTradeRoutes, this.checkCities,
+     this.checkFishingVillages, this.checkBlockades].forEach(cb => {
+      if (cb) cb.disabled = true;
+    });
   }
 }

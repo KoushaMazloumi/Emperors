@@ -333,6 +333,7 @@ export default class NetworkManager {
       type: "move-request",
       action: action,
       params: params,
+      turnNumber: this._gameEngine.turnManager ? this._gameEngine.turnManager.currentTurn : undefined,
     });
   }
 
@@ -519,6 +520,13 @@ export default class NetworkManager {
     const currentPlayer = this._gameEngine.currentPlayer;
     if (currentPlayer !== "p2") {
       conn.send({ type: "move-ack", valid: false, reason: "Not your turn" });
+      return;
+    }
+
+    // Reject stale moves from a previous turn
+    if (message.turnNumber !== undefined &&
+        message.turnNumber !== this._gameEngine.turnManager.currentTurn) {
+      conn.send({ type: "move-ack", valid: false, reason: "Stale move from previous turn" });
       return;
     }
 

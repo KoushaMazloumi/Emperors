@@ -152,8 +152,15 @@ export default class MultiplayerUI {
         this._currentPlayer = null;
         // Reset InputHandler multiplayer role
         if (this.inputHandler) {
-          this.inputHandler.setMultiplayerRole(null, null);
-          this.inputHandler.enable();
+          if (this.networkManager.isHost) {
+            // Keep host role — enforce turn restriction even when guest disconnected
+            this._currentPlayer = "p1";
+            this._updateInputHandlerState();
+          } else {
+            // Guest: reset to local play
+            this.inputHandler.setMultiplayerRole(null, null);
+            this.inputHandler.enable();
+          }
         }
       });
 
